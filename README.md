@@ -9,7 +9,7 @@ I made this script to make it easier for PC flippers to prepare Windows on build
 - Opens Sysprep
 
 # Execution
-You can run the script using the command `placeholder`. 
+You can run the script using the command `irm bit.ly/pcflipperwindowsscript | iex`. 
 
 # Issues
 If you have any issues, please make an issue on the [Issues page](https://github.com/PowerPCFan/pc-flipper-windows-script/issues). 

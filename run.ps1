@@ -1,7 +1,6 @@
 # Set variables:
 $temp = $env:Temp
 $folderName = "pc-flipper-script"
-$scriptName = "pc-flip-preparation-script.ps1"
 
 # Changes directory to the Windows temp folder.
 Set-Location $temp
@@ -15,10 +14,10 @@ New-Item -Name "$folderName" -Type Directory
 Set-Location "$folderName"
 
 # Downloads main script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "$scriptName"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "pc-flip-preparation-script.ps1"
 
 # Changes PowerShell's execution policy to Unrestricted
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force
 
 # Runs the script
-powershell.exe ".\scriptName"
+powershell.exe ".\pc-flip-preparation-script.ps1"

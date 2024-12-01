@@ -95,6 +95,8 @@ if ($osInfo.ProductName -match "Windows 10" -and $osInfo.BuildLabEx -ge "22000")
 }
 }
 
+Clear-Host
+
 # Detect and install GPU drivers
 Install-GPUDrivers
 

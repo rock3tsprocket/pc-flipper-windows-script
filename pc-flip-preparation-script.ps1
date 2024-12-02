@@ -27,7 +27,7 @@ function Install-GPUDrivers {
 		mkdir "$env:Temp\AMD-Drivers"
 		$amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
 		$ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://gofile.to/f/5c39ac3f-fda7-4918-a436-39cec23a2c04" -OutFile "$amdDrivers"
+        Invoke-WebRequest -Uri "https://cold7.gofile.io/download/web/a985dc51-6a64-45b3-aa83-38acbaf28ce6/amd-software-adrenalin-edition-24.10.1-minimalsetup-241031_web.exe" -OutFile "$amdDrivers"
 		Write-Output "Drivers successfully downloaded. Press ENTER to install."
 		Read-Host
 		Start-Process $amdDrivers

@@ -13,7 +13,7 @@ Import-Module AnyBox
 
 # Detect GPU and download drivers based on detected GPU
 function Install-GPUDrivers {
-    Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
+    $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
         Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
         Read-Host

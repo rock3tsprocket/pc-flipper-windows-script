@@ -11,19 +11,10 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 Install-Module -Name 'AnyBox' -RequiredVersion 0.5.1
 Import-Module AnyBox
 
-function InitializeGPUCheck {
-	$gpuIsNvidia = $false
-	$gpuIsAMD = $false
-}
-
 # Detect GPU and download drivers based on detected GPU
 function Install-GPUDrivers {
-    $gpu = Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name
-    Write-Output "Detected GPU: $gpu"
-    InitializeGPUCheck
-
+    Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
-        $gpuIsNvidia = $true
         Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
         Read-Host
 	    Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
@@ -35,7 +26,6 @@ function Install-GPUDrivers {
         Read-Host
         Start-Process $nvidiaDrivers
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
-        $gpuIsAMD = $true
         Write-Output "AMD GPU detected. Press ENTER to download drivers..."
         Read-Host
         Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
@@ -66,7 +56,6 @@ function Install-GPUDrivers {
 
         # Act on responses.
         if ($response['amd'] -eq $true) {
-			$gpuIsAMD = $true
 			Write-Output "AMD GPU detected. Press ENTER to download drivers..."
 			Read-Host
             Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
@@ -78,7 +67,6 @@ function Install-GPUDrivers {
 			Read-Host
 			Start-Process $amdDrivers
         } elseif ($response['nvidia'] -eq $true) {
-			$gpuIsNvidia = $true
 			Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
 			Read-Host
             Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
@@ -111,7 +99,7 @@ function Search-MotherboardDrivers {
     Start-Process $searchUrl
 }
 
-function Run-Tweaks {
+function runTweaks {
 Write-Output "Press ENTER to run basic Windows tweaks to improve the user experience."
 Read-Host
 
@@ -163,7 +151,7 @@ Install-GPUDrivers
 Search-MotherboardDrivers
 
 # Run tweaks
-Run-Tweaks
+runTweaks
 Write-Output "Press ENTER to finish applying the tweaks."
 Read-Host
 TASKKILL /F /IM explorer.exe

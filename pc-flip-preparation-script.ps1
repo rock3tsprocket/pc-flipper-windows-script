@@ -26,7 +26,7 @@ function Install-GPUDrivers {
         $gpuIsNvidia = $true
         Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
         Read-Host
-	rmdir "$env:Temp\Nvidia-Drivers"
+	    Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
         mkdir "$env:Temp\Nvidia-Drivers"
         $nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
         $ProgressPreference = 'SilentlyContinue'
@@ -38,7 +38,7 @@ function Install-GPUDrivers {
         $gpuIsAMD = $true
         Write-Output "AMD GPU detected. Press ENTER to download drivers..."
         Read-Host
-        rmdir "$env:Temp\AMD-Drivers"
+        Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
         mkdir "$env:Temp\AMD-Drivers"
         $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
 		$adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
@@ -69,7 +69,7 @@ function Install-GPUDrivers {
 			$gpuIsAMD = $true
 			Write-Output "AMD GPU detected. Press ENTER to download drivers..."
 			Read-Host
-   			rmdir "$env:Temp\AMD-Drivers"
+            Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
 			mkdir "$env:Temp\AMD-Drivers"
 			$amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
 			$adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
@@ -81,7 +81,7 @@ function Install-GPUDrivers {
 			$gpuIsNvidia = $true
 			Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
 			Read-Host
-   			rmdir "$env:Temp\Nvidia-Drivers"
+            Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
 			mkdir "$env:Temp\Nvidia-Drivers"
 			$nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
 			$ProgressPreference = 'SilentlyContinue'

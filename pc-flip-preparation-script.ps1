@@ -18,9 +18,7 @@ function InitializeGPUCheck {
 
 # Detect GPU and download drivers based on detected GPU
 function Install-GPUDrivers {
-    # $gpu = Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name
-    # temp for debugging 
-    $gpu = $debug
+    $gpu = Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name
     Write-Output "Detected GPU: $gpu"
     InitializeGPUCheck
 
@@ -41,8 +39,8 @@ function Install-GPUDrivers {
         Read-Host
         mkdir "$env:Temp\AMD-Drivers"
         $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://cold7.gofile.io/download/web/a985dc51-6a64-45b3-aa83-38acbaf28ce6/amd-software-adrenalin-edition-24.10.1-minimalsetup-241031_web.exe" -OutFile "$amdDrivers"
+		$adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
+		curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
         Write-Output "Drivers successfully downloaded. Press ENTER to install."
         Read-Host
         Start-Process $amdDrivers
@@ -66,21 +64,27 @@ function Install-GPUDrivers {
 
         # Act on responses.
         if ($response['amd'] -eq $true) {
-            mkdir "$env:Temp\AMD-Drivers"
-            $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-            $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri "https://cold7.gofile.io/download/web/a985dc51-6a64-45b3-aa83-38acbaf28ce6/amd-software-adrenalin-edition-24.10.1-minimalsetup-241031_web.exe" -OutFile "$amdDrivers"
-            Write-Output "Drivers successfully downloaded. Press ENTER to install."
-            Read-Host
-            Start-Process $amdDrivers
+			$gpuIsAMD = $true
+			Write-Output "AMD GPU detected. Press ENTER to download drivers..."
+			Read-Host
+			mkdir "$env:Temp\AMD-Drivers"
+			$amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
+			$adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
+			curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
+			Write-Output "Drivers successfully downloaded. Press ENTER to install."
+			Read-Host
+			Start-Process $amdDrivers
         } elseif ($response['nvidia'] -eq $true) {
-            mkdir "$env:Temp\Nvidia-Drivers"
-            $nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
-            $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
-            Write-Output "Drivers successfully downloaded. Press ENTER to install."
-            Read-Host
-            Start-Process $nvidiaDrivers
+			$gpuIsNvidia = $true
+			Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
+			Read-Host
+			mkdir "$env:Temp\Nvidia-Drivers"
+			$nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
+			$ProgressPreference = 'SilentlyContinue'
+			Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
+			Write-Output "Drivers successfully downloaded. Press ENTER to install."
+			Read-Host
+			Start-Process $nvidiaDrivers
         } elseif ($response['other'] -eq $true) {
             Write-Output "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
             Write-Output "Press any key to continue"

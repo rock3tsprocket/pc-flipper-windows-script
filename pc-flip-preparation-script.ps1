@@ -1,3 +1,16 @@
+# Check if the script is running as an administrator
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+	Clear-Host
+    Write-Host "Failure: Current permissions inadequate. Please run the file again as administrator." -ForegroundColor Red
+    Write-Host "Press any key to exit..."
+	Read-Host
+	Exit
+}
+
+# AnyBox
+Install-Module -Name 'AnyBox' -RequiredVersion 0.5.1
+Import-Module AnyBox
+
 function InitializeGPUCheck {
 	$gpuIsNvidia = $false
 	$gpuIsAMD = $false
@@ -5,40 +18,78 @@ function InitializeGPUCheck {
 
 # Detect GPU and download drivers based on detected GPU
 function Install-GPUDrivers {
-    $gpu = Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name
+    # $gpu = Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name
+    # temp for debugging 
+    $gpu = $debug
     Write-Output "Detected GPU: $gpu"
-	InitializeGPUCheck
-	
+    InitializeGPUCheck
+
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
-		$gpuIsNvidia = $true
+        $gpuIsNvidia = $true
         Write-Output "NVIDIA GPU detected. Press ENTER to download drivers..."
-		Read-Host
-		mkdir "$env:Temp\Nvidia-Drivers"
-		$nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
-		$ProgressPreference = 'SilentlyContinue'
+        Read-Host
+        mkdir "$env:Temp\Nvidia-Drivers"
+        $nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
-		Write-Output "Drivers successfully downloaded. Press ENTER to install."
-		Read-Host
-		Start-Process $nvidiaDrivers
+        Write-Output "Drivers successfully downloaded. Press ENTER to install."
+        Read-Host
+        Start-Process $nvidiaDrivers
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
-		$gpuIsAMD = $true
+        $gpuIsAMD = $true
         Write-Output "AMD GPU detected. Press ENTER to download drivers..."
-		Read-Host
-		mkdir "$env:Temp\AMD-Drivers"
-		$amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-		$ProgressPreference = 'SilentlyContinue'
+        Read-Host
+        mkdir "$env:Temp\AMD-Drivers"
+        $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri "https://cold7.gofile.io/download/web/a985dc51-6a64-45b3-aa83-38acbaf28ce6/amd-software-adrenalin-edition-24.10.1-minimalsetup-241031_web.exe" -OutFile "$amdDrivers"
-		Write-Output "Drivers successfully downloaded. Press ENTER to install."
-		Read-Host
-		Start-Process $amdDrivers
+        Write-Output "Drivers successfully downloaded. Press ENTER to install."
+        Read-Host
+        Start-Process $amdDrivers
     } elseif ($gpu -like "*Intel*") {
         Write-Output "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
-		Write-Output "Press ENTER to skip the GPU driver part of this script."
-		Read-Host
+        Write-Output "Press ENTER to skip the GPU driver part of this script."
+        Read-Host
     } else {
-        Write-Output "Unknown GPU. Please check manually and download appropriate drivers."
+        $anybox = New-Object AnyBox.AnyBox
+		
+        $anybox.Message = 'Error detecting. What brand is your GPU?'
+
+        $anybox.Buttons = @(
+            New-AnyBoxButton -Name 'amd' -Text 'AMD'
+            New-AnyBoxButton -Name 'nvidia' -Text 'Nvidia'
+            New-AnyBoxButton -Name 'other' -Text 'Other'
+        )
+
+        # Show the AnyBox; collect responses.
+        $response = $anybox | Show-AnyBox
+
+        # Act on responses.
+        if ($response['amd'] -eq $true) {
+            mkdir "$env:Temp\AMD-Drivers"
+            $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri "https://cold7.gofile.io/download/web/a985dc51-6a64-45b3-aa83-38acbaf28ce6/amd-software-adrenalin-edition-24.10.1-minimalsetup-241031_web.exe" -OutFile "$amdDrivers"
+            Write-Output "Drivers successfully downloaded. Press ENTER to install."
+            Read-Host
+            Start-Process $amdDrivers
+        } elseif ($response['nvidia'] -eq $true) {
+            mkdir "$env:Temp\Nvidia-Drivers"
+            $nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
+            Write-Output "Drivers successfully downloaded. Press ENTER to install."
+            Read-Host
+            Start-Process $nvidiaDrivers
+        } elseif ($response['other'] -eq $true) {
+            Write-Output "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
+            Write-Output "Press any key to continue"
+            Read-Host
+        }
     }
 }
+
+
 
 # Function to detect motherboard and search for drivers
 function Search-MotherboardDrivers {

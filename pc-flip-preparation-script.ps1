@@ -11,7 +11,21 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 Install-Module -Name 'AnyBox' -RequiredVersion 0.5.1
 Import-Module AnyBox
 
+# Dot source motherboards.ps1 for the function:
+# MotherboardDriverAutoDownloader
+
+# Only the MotherboardDriverAutoDownloader function needs to be used in this script,
+# the other functions are only for use in the main function MotherboardDriverAutoDownloader so they are not listed here
+
 # Detect GPU and download drivers based on detected GPU
+
+Set-Location "$env:Temp"
+Set-Location "pc-flipper-script"
+# i can probably just do Set-Location "$env:Temp\pc-flipper-script" but this works so why not
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/motherboards.ps1" -OutFile "motherboards.ps1"
+# THE DOT SOURCE
+. .\motherboards.ps1
+
 function Install-GPUDrivers {
     $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
@@ -93,10 +107,7 @@ function Search-MotherboardDrivers {
     $manufacturer = (Get-WmiObject Win32_BaseBoard).Manufacturer
 	$fullMotherboardName = $manufacturer + " " + $board
     Write-Output "Detected Motherboard: $fullMotherboardName"
-    $searchUrl = "https://duckduckgo.com/?q=motherboard+drivers+for+$($fullMotherboardName -replace ' ', '+')"
-	Write-Output "Press ENTER to open your default browser and display the search results for your motherboard drivers."
-	Read-Host
-    Start-Process $searchUrl
+    MotherboardDriverAutoDownloader
 }
 
 function runTweaks {

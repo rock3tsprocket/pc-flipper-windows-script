@@ -1,5 +1,6 @@
 # Set variables:
 $temp = $env:Temp
+# I don't remember why I made this variable instead of just using the environment variable but if it ain't broke don't fix it!! :D
 
 # Changes directory to the Windows temp folder.
 Set-Location $temp

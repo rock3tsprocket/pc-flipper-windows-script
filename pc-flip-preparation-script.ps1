@@ -11,21 +11,6 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 Install-Module -Name 'AnyBox' -RequiredVersion 0.5.1
 Import-Module AnyBox
 
-# Dot source motherboards.ps1 for the function:
-# MotherboardDriverAutoDownloader
-
-# Only the MotherboardDriverAutoDownloader function needs to be used in this script,
-# the other functions are only for use in the main function MotherboardDriverAutoDownloader so they are not listed here
-
-# Detect GPU and download drivers based on detected GPU
-
-Set-Location "$env:Temp"
-Set-Location "pc-flipper-script"
-# i can probably just do Set-Location "$env:Temp\pc-flipper-script" but this works so why not
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/motherboards.ps1" -OutFile "motherboards.ps1"
-# THE DOT SOURCE
-. .\motherboards.ps1
-
 function Install-GPUDrivers {
     $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
@@ -100,16 +85,6 @@ function Install-GPUDrivers {
 }
 
 
-
-# Function to detect motherboard and search for drivers
-function Search-MotherboardDrivers {
-    $board = (Get-WmiObject Win32_BaseBoard).Product
-    $manufacturer = (Get-WmiObject Win32_BaseBoard).Manufacturer
-	$fullMotherboardName = $manufacturer + " " + $board
-    Write-Output "Detected Motherboard: $fullMotherboardName"
-    MotherboardDriverAutoDownloader
-}
-
 function runTweaks {
 Write-Output "Press ENTER to run basic Windows tweaks to improve the user experience."
 Read-Host
@@ -158,8 +133,14 @@ Clear-Host
 # Detect and install GPU drivers
 Install-GPUDrivers
 
-# Search for motherboard drivers
-Search-MotherboardDrivers
+# Dot source chipset.ps1 to install chipset drivers
+Set-Location "$env:Temp"
+Set-Location "pc-flipper-script"
+# i can probably just do Set-Location "$env:Temp\pc-flipper-script" but this works so why not
+$chipsetPs1Url = "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/chipset.ps1"
+Invoke-WebRequest -Uri "$chipsetPs1Url" -OutFile "chipset.ps1"
+# dot source file
+. .\chipset.ps1
 
 # Run tweaks
 runTweaks
@@ -170,6 +151,7 @@ Start-Process "$env:WinDir\explorer.exe"
 Write-Output "Tweaks done."
 
 Write-Output "Press ENTER to download and install Firefox Browser."
+Write-Host -ForegroundColor Green "Note: More apps coming, and a 'skip' option! Check back soon, and please star the repo!"
 Read-Host
 # Install Firefox
 $FirefoxInstaller = "$env:TEMP\FirefoxInstaller.exe"

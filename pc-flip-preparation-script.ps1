@@ -146,7 +146,7 @@ Invoke-WebRequest -Uri "$chipsetPs1Url" -OutFile "chipset.ps1"
 runTweaks
 Write-Output "Press ENTER to finish applying the tweaks."
 Read-Host
-TASKKILL /F /IM explorer.exe
+TASKKILL.exe /F /IM explorer.exe
 Start-Process "$env:WinDir\explorer.exe"
 Write-Output "Tweaks done."
 

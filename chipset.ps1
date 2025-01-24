@@ -1,28 +1,29 @@
 # Make directory to download drivers to, and "cd" the directory
+Remove-Item -Recurse -Force "C:\DownloadedDrivers" # delete just in case script has ran before
 New-Item -Directory "C:\DownloadedDrivers"
 Set-Location "C:\DownloadedDrivers"
 # new dir for chipset drivers
-New-Item -Directory "Chipset"
+New-Item -Name "Chipset" -ItemType Directory
 # Set variable for driver download location (i dont remember why i made it a script variable but whatever)
 $Script:dLocation = "C:\DownloadedDrivers"
 
 
 # chipset drivers
-$currentCPU = (Get-WmiObject Win32_Processor).Name
+$currentCPU = (Get-CimInstance Win32_Processor).Name
 if ($currentCPU -like "*AMD*") {
     $chipsetDriverPath = "C:\DownloadedDrivers\Chipset\amdchipset.exe"
     $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
-    curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o $chipsetDriverPath
+    curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
     Clear-Host
-    Write-Host "AMD chipset drivers successfully downloaded. Press any key to install."
-    Read-Host "Press Enter to continue..."
-    Start-Process $chipsetDriverPath
+    Write-Host "AMD chipset drivers successfully downloaded."
+    Read-Host "Press Enter to install..."
+    Start-Process "$chipsetDriverPath"
 } elseif ($currentCPU -like "*Intel*") {
     $chipsetDriverPath = "C:\DownloadedDrivers\Chipset\SetupChipset_Intel.exe"
     Invoke-WebRequest -Uri "https://downloadmirror.intel.com/843223/SetupChipset.exe" -OutFile "$chipsetDriverPath"
     Clear-Host
-    Write-Host "Intel chipset drivers successfully downloaded. Press any key to install."
-    Read-Host "Press Enter to continue..."
+    Write-Host "Intel chipset drivers successfully downloaded."
+    Read-Host "Press Enter to install..."
     Start-Process $chipsetDriverPath
 }
 
@@ -69,9 +70,9 @@ while (-not $validInput) {
 
 
 # hi you found something
-
 # here is the old code!!! or at least part of it
-
+# I scrapped this idea because it was way too time consuming and pointless to have drivers from motherboard manufacturer for every board
+# idk why i left it here but it doesnt matter!!! :)
 
 # --------------------------------------------------------------------------------
 

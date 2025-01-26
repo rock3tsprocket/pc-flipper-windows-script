@@ -35,9 +35,9 @@ $fullMotherboardName = $manufacturer + " " + $board
 
 Write-Host "Chipset drivers have finished installing."
 Write-Host "Would you like to search for your motherboard's driver page to download any additional drivers?"
-
+$readHostMessage = "[Y] Yes, search for motherboard page  [N] No, continue"
 $validInput = $false
-$key = Read-Host "[Y] Yes, search for motherboard page  [N] No, continue"
+$key = Read-Host "$readHostMessage"
 while (-not $validInput) {
     switch ($key.ToUpper()) {
         'Y' {
@@ -50,8 +50,8 @@ while (-not $validInput) {
         }
         default {
             $validInput = $false
-            Write-Host "Invalid input. Please try again"
-            $key = Read-Host "[Y] Yes, search for motherboard page  [N] No, continue"
+            Write-Host -ForegroundColor Red "Invalid input. Please try again"
+            $key = Read-Host "$readHostMessage"
         }
     }
 }

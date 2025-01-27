@@ -182,7 +182,7 @@ yesOrNo
 Set-Location "$env:Temp"
 Set-Location "pc-flipper-script"
 # i can probably just do Set-Location "$env:Temp\pc-flipper-script" but this works so why not
-$chipsetPs1Url = "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/chipset.ps1"
+$chipsetPs1Url = "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/testing-unstable/chipset.ps1"
 Invoke-WebRequest -Uri "$chipsetPs1Url" -OutFile "chipset.ps1"
 # dot source file
 . .\chipset.ps1

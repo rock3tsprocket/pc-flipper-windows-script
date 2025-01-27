@@ -1,19 +1,73 @@
 # Check if the script is running as an administrator
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-	Clear-Host
+Clear-Host
     Write-Host "Failure: Current permissions inadequate. Please run the file again as administrator." -ForegroundColor Red
-    Write-Host "Press any key to exit..."
-	Read-Host
+    Read-Host "Press any key to exit..."
 	Exit
 }
 
-# AnyBox
-Install-Module -Name 'AnyBox' -RequiredVersion 0.5.1
+# WinGet
+try {
+    winget --version
+} catch {
+    Write-Host "Winget not present / outdated"
+    # Get the download URL of the latest winget installer from GitHub:
+    $API_URL = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+    $DOWNLOAD_URL = $(Invoke-RestMethod $API_URL).assets.browser_download_url |
+    Where-Object {$_.EndsWith(".msixbundle")}
+
+    # Download the installer:
+    Invoke-WebRequest -URI $DOWNLOAD_URL -OutFile winget.msixbundle -UseBasicParsing
+
+    # Install winget:
+    Add-AppxPackage winget.msixbundle
+
+    # Remove the installer:
+    Remove-Item winget.msixbundle
+}
+
+
+# NuGet (idk if this is necessary or not but whatever)
+Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm
+
+
+# # Commented out since i found a better way to do this
+# # AnyBox stuff
+# # Check if AnyBox version 0.5.1 is installed
+# if (Test-Path "$env:programfiles\WindowsPowerShell\Modules\AnyBox\0.5.1") {
+#     Write-Host -ForegroundColor Green "SUCCESS: AnyBox version 0.5.1 is installed. Continuing..."
+# } else {
+#     # Check if ANY version of AnyBox is installed
+#     if (Test-Path "$env:programfiles\WindowsPowerShell\Modules\AnyBox") {
+#         Write-Warning "Old version of AnyBox detected. Reinstalling..."
+#         Install-PSResource -Name 'AnyBox' -Repository 'PSGallery' -Version '0.5.1' -Reinstall -Quiet -AcceptLicense -TrustRepository 
+#     } else {
+#         Write-Host -ForegroundColor Red "ERROR: AnyBox not found. Installing..."
+#         Install-PSResource -Name 'AnyBox' -Repository 'PSGallery' -Version '0.5.1' -Quiet -AcceptLicense -TrustRepository
+#     }
+# }
+
+
+# AnyBox stuff
+$moduleName = 'AnyBox'
+$requiredVersion = '0.5.1'
+$module = Get-Module -ListAvailable -Name $moduleName -All | Where-Object { $_.Version -eq $requiredVersion }
+if (-not $module) {
+    if (-not (Get-Module PSResourceGet -listavailable -All)) {
+        Install-Module -Name $moduleName -RequiredVersion $requiredVersion -Force -TrustRepository -Reinstall -Repository PSGallery -Confirm:$false
+    } else {
+        Install-PSResource -Name $moduleName -Version $requiredVersion -Force -TrustRepository -Reinstall -Repository PSGallery -Quiet -AcceptLicense
+    }
+}
+
 Import-Module AnyBox
+
+
 
 function Install-GPUDrivers {
     $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
+Clear-Host
         Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
 	    Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
         mkdir "$env:Temp\Nvidia-Drivers"
@@ -22,6 +76,7 @@ function Install-GPUDrivers {
         Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
         Start-Process $nvidiaDrivers
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
+Clear-Host
         Write-Host "AMD GPU detected. Drivers downloading and installing..."
         Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
         mkdir "$env:Temp\AMD-Drivers"
@@ -30,9 +85,9 @@ function Install-GPUDrivers {
 		curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
         Start-Process $amdDrivers
     } elseif ($gpu -like "*Intel*") {
+Clear-Host
         Write-Host "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
-        Write-Host "Press ENTER to skip the GPU driver part of this script."
-        Read-Host
+        Read-Host "Press ENTER to skip the GPU driver part of this script."
     } else {
         $anybox = New-Object AnyBox.AnyBox
 		
@@ -49,6 +104,7 @@ function Install-GPUDrivers {
 
         # Act on responses.
         if ($response['amd'] -eq $true) {
+Clear-Host
 			Write-Host "Drivers downloading and installing..."
             Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
 			mkdir "$env:Temp\AMD-Drivers"
@@ -57,6 +113,7 @@ function Install-GPUDrivers {
 			curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
 			Start-Process $amdDrivers
         } elseif ($response['nvidia'] -eq $true) {
+Clear-Host
 			Write-Host "Drivers downloading and installing..."
             Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
 			mkdir "$env:Temp\Nvidia-Drivers"
@@ -65,14 +122,15 @@ function Install-GPUDrivers {
 			Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
 			Start-Process $nvidiaDrivers
         } elseif ($response['other'] -eq $true) {
+Clear-Host
             Write-Host "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
-            Write-Host "Press any key to continue"
-            Read-Host
+            Read-Host "Press any key to continue"
         }
     }
 }
 
 function runTweaks {
+Clear-Host
     Write-Host "Disabling Search Box Suggestions in start menu..."
     reg add "HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v "DisableSearchBoxSuggestions" /t REG_DWORD /d "1" /f > $null
 
@@ -90,8 +148,6 @@ function runTweaks {
 
     Write-Host "Enabling Dark Mode..."
     reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f > $null
-    reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v ColorPrevalence /t REG_DWORD /d 0 /f > $null
-    reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f > $null
     reg add "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f > $null
 
     Write-Host "Disabling Sticky Keys..."
@@ -103,13 +159,16 @@ function runTweaks {
     Write-Host "Disabling Cortana..."
     reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /t REG_DWORD /d "0" /f > $null
 
-    # Get OS information from the registry
-    $osInfo = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
-
-    # Check if the OS is Windows 11 based on the build number
-    if ($osInfo.ProductName -match "Windows 10" -and $osInfo.BuildLabEx -ge "22000") {
+    # Check if the OS is Windows 11
+    $windowsOSVersion = (systeminfo | findstr /B /C:"OS Name")
+    if ($windowsOSVersion -like "*Windows 11*") {
+        Write-Host "Aligning taskbar to the left..."
         reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAl" /t REG_DWORD /d "0" /f > $null
     }
+
+Clear-Host
+
+    Write-Host -ForegroundColor Green "Windows tweaks complete."
 }
 
 Clear-Host
@@ -323,7 +382,7 @@ function FurmarkTest {
         }
         $formattedResults = $formattedResults -join " "
     } else {
-        Clear-Host
+Clear-Host
         Write-Warning -Message "The 'results' variable does not contain a dictionary or hashtable. Script continuing..." 
         Start-Sleep -Seconds 3
     }

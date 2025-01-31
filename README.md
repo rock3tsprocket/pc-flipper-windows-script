@@ -8,9 +8,9 @@ I made this script to make it easier for PC flippers to prepare Windows on build
 - If you chose to install FurMark it will run a stress test
 
 # Execution
-1. Type "Windows PowerShell" into the Start Menu.\
-2. Right-click it, and select "Run as administrator."\
-3. Paste in the following command: `irm bit.ly/pcflipperwindowsscript | iex`\
+1. Type "Windows PowerShell" into the Start Menu.
+2. Right-click it, and select "Run as administrator."
+3. Paste in the following command: `irm bit.ly/pcflipperwindowsscript | iex`
 
 # Issues
 If you have any issues, please create an "issue" on the [Issues page](https://github.com/PowerPCFan/pc-flipper-windows-script/issues).\

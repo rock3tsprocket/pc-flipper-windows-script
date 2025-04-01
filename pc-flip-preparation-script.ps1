@@ -1,6 +1,6 @@
 # Check if the script is running as an administrator
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-Clear-Host
+# Clear-Host
     Write-Host "Failure: Current permissions inadequate. Please run the file again as administrator." -ForegroundColor Red
     Read-Host "Press any key to exit..."
 	Exit
@@ -67,7 +67,7 @@ Import-Module AnyBox
 function Install-GPUDrivers {
     $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
-Clear-Host
+# Clear-Host
         Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
 	Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
         mkdir "$env:Temp\Nvidia-Drivers"
@@ -76,7 +76,7 @@ Clear-Host
         Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
         Start-Process $nvidiaDrivers
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
-Clear-Host
+# Clear-Host
         Write-Host "AMD GPU detected. Drivers downloading and installing..."
         Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
         mkdir "$env:Temp\AMD-Drivers"
@@ -85,7 +85,7 @@ Clear-Host
 	curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
         Start-Process $amdDrivers
     } elseif ($gpu -like "*Intel*") {
-Clear-Host
+# Clear-Host
         Write-Host "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
         Read-Host "Press ENTER to skip the GPU driver part of this script."
     } else {
@@ -104,7 +104,7 @@ Clear-Host
 
         # Act on responses.
         if ($response['amd'] -eq $true) {
-		Clear-Host
+		# Clear-Host
 		Write-Host "Drivers downloading and installing..."
             	Remove-Item -Recurse -Force "$env:Temp\AMD-Drivers"
 		mkdir "$env:Temp\AMD-Drivers"
@@ -113,7 +113,7 @@ Clear-Host
 		curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
 		Start-Process $amdDrivers
         } elseif ($response['nvidia'] -eq $true) {
-		Clear-Host
+		# Clear-Host
 		Write-Host "Drivers downloading and installing..."
             	Remove-Item -Recurse -Force "$env:Temp\Nvidia-Drivers"
 		mkdir "$env:Temp\Nvidia-Drivers"
@@ -122,7 +122,7 @@ Clear-Host
 		Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
 		Start-Process $nvidiaDrivers
         } elseif ($response['other'] -eq $true) {
-		Clear-Host
+		# Clear-Host
             	Write-Host "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
             	Read-Host "Press any key to continue"
         }
@@ -131,7 +131,7 @@ Clear-Host
 
 
 function runTweaks {
-	Clear-Host
+	# Clear-Host
  	Write-Host "RUNNING TWEAKS"
 	Write-Host "Disabling Search Box Suggestions in start menu..."
 	reg add "HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v "DisableSearchBoxSuggestions" /t REG_DWORD /d "1" /f > $null
@@ -171,12 +171,12 @@ function runTweaks {
 		reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAl" /t REG_DWORD /d "0" /f > $null
 	}
 	
-	Clear-Host
+	# Clear-Host
 	Write-Host -ForegroundColor Green "Windows tweaks complete."
 }
 
 Start-Sleep -Seconds 3
-Clear-Host
+# Clear-Host
 
 # Detect and install GPU drivers
 Install-GPUDrivers
@@ -347,7 +347,7 @@ function FurmarkTest {
         }
         $formattedResults = $formattedResults -join " "
     } else {
-Clear-Host
+# Clear-Host
         Write-Warning -Message "The 'results' variable does not contain a dictionary or hashtable. Script continuing..." 
         Start-Sleep -Seconds 3
     }

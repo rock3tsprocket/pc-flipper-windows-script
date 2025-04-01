@@ -14,14 +14,14 @@ if ($currentCPU -like "*AMD*") {
     $chipsetDriverPath = "C:\DownloadedDrivers\Chipset\amdchipset.exe"
     $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
     curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
-    Clear-Host
+    # Clear-Host
     Write-Host "AMD chipset drivers successfully downloaded."
     Read-Host "Press Enter to install..."
     Start-Process "$chipsetDriverPath"
 } elseif ($currentCPU -like "*Intel*") {
     $chipsetDriverPath = "C:\DownloadedDrivers\Chipset\SetupChipset_Intel.exe"
     Invoke-WebRequest -Uri "https://downloadmirror.intel.com/843223/SetupChipset.exe" -OutFile "$chipsetDriverPath"
-    Clear-Host
+    # Clear-Host
     Write-Host "Intel chipset drivers successfully downloaded."
     Read-Host "Press Enter to install..."
     Start-Process $chipsetDriverPath

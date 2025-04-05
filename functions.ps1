@@ -127,7 +127,7 @@ function Start-FurmarkTest {
     # minutes to milliseconds
     $furmarkTestDuration = [int]$furmarkTestDuration * 60 * 1000
 
-    $furmarkPath = "C:\Program Files (x86)\Geeks3D\Benchmarks\FurMark\FurMark.exe"
+    $furmarkPath = "${env:ProgramFiles(x86)}\Geeks3D\Benchmarks\FurMark\FurMark.exe"
 
     if ($formattedResults -like '*Start, True*') {
         Start-Process -FilePath "$furmarkPath" -ArgumentList "/nogui /width=$furmarkTestWidth /height=$furmarkTestHeight /msaa=$furmarkAntiAliasing /max_time=$furmarkTestDuration"
@@ -138,28 +138,9 @@ function Start-FurmarkTest {
 function Install-GPUDrivers {
     $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
-        # Clear-Host
-        Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
-        Remove-IfExists -Recurse -Force -Path "$env:Temp\Nvidia-Drivers"
-        New-Item -Type Directory -Path "$env:Temp\Nvidia-Drivers"
-        $nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
-        Start-Process $nvidiaDrivers
+        Nvidia-DriverInstallProcess
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
-        # Clear-Host
-        Write-Host "AMD GPU detected. Drivers downloading and installing..."
-        Remove-IfExists -Recurse -Force -Path "$env:Temp\AMD-Drivers"
-        New-Item -ItemType Directory -Path "$env:Temp\AMD-Drivers"
-        $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-        $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
-        curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
-        if (Test-Path $amdDrivers) {
-            Start-Process $amdDrivers
-            $Script:amdDrivers = $amdDrivers # Make sure the variable is available throughout the script
-        } else {
-            Write-Host -ForegroundColor Red "Error: AMD driver installer not found."
-        }    
+        AMD-DriverInstallProcess
     } elseif ($gpu -like "*Intel*") {
         # Clear-Host
         Write-Host "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
@@ -180,28 +161,36 @@ function Install-GPUDrivers {
 
         # Act on responses.
         if ($response['amd'] -eq $true) {
-		# Clear-Host
-		Write-Host "Drivers downloading and installing..."
-        Remove-IfExists -Recurse -Force -Path "$env:Temp\AMD-Drivers"
-		New-Item -ItemType Directory -Path "$env:Temp\AMD-Drivers"
-		$amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-		$adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
-		curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
-		Start-Process $amdDrivers
+            AMD-DriverInstallProcess
         } elseif ($response['nvidia'] -eq $true) {
-		# Clear-Host
-		Write-Host "Drivers downloading and installing..."
-        Remove-IfExists -Recurse -Force -Path "$env:Temp\Nvidia-Drivers"
-		New-Item -ItemType Directory -Path "$env:Temp\Nvidia-Drivers"
-		$nvidiaDrivers = "$env:Temp\Nvidia-Drivers\setup.exe"
-		$ProgressPreference = 'SilentlyContinue'
-		Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.1.163/NVIDIA_app_v11.0.1.163.exe" -OutFile "$nvidiaDrivers"
-		Start-Process $nvidiaDrivers
+            Nvidia-DriverInstallProcess
         } elseif ($response['other'] -eq $true) {
-		# Clear-Host
-            	Write-Host "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
-            	Read-Host "Press any key to continue"
+            Write-Host "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
+            Read-Host "Press any key to continue"
         }
+    }
+}
+
+function Nvidia-DriverInstallProcess {
+    Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
+    New-Item -Type Directory -Path "Nvidia-Drivers"
+    $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
+    Start-Process $nvidiaDrivers
+}
+
+function AMD-DriverInstallProcess {
+    Write-Host "AMD GPU detected. Drivers downloading and installing..."
+    New-Item -ItemType Directory -Path "AMD-Drivers"
+    $amdDrivers = "AMD-Drivers\setup.exe"
+    $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
+    curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
+    if (Test-Path $amdDrivers) {
+        Start-Process $amdDrivers
+        $Script:amdDrivers = $amdDrivers # Make sure the variable is available throughout the script
+    } else {
+        Write-Host -ForegroundColor Red "Error: AMD driver installer not found."
     }
 }
 

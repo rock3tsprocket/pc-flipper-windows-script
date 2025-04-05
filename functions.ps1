@@ -152,8 +152,7 @@ function Install-GPUDrivers {
         Remove-IfExists -Recurse -Force -Path "$env:Temp\AMD-Drivers"
         New-Item -ItemType Directory -Path "$env:Temp\AMD-Drivers"
         $amdDrivers = "$env:Temp\AMD-Drivers\setup.exe"
-        # $adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/main/configs/link_full.txt")
-        $adrenalinDriverLink = (curl.exe "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/drivers/amd/link.txt")
+        $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
         curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
         if (Test-Path $amdDrivers) {
             Start-Process $amdDrivers

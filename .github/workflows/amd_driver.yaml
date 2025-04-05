@@ -1,89 +1,3 @@
-# # ai generated amd driver thing
-# name: Daily JSON Check
-
-# on:
-#   schedule:
-#     # Runs the action daily at 1am (UTC).
-#     - cron: '0 1 * * *'
-#   workflow_dispatch:  # Allows manual trigger as well
-
-# jobs:
-#   extract-string:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout the repository
-#         uses: actions/checkout@v3
-#         with:
-#           fetch-depth: 0  # Fetch all history for proper git diff
-
-#       - name: Create directory structure if needed
-#         run: |
-#           # Create directory structure if it doesn't exist
-#           mkdir -p drivers/amd
-
-#       - name: Check if link.txt exists and store its content
-#         id: check_old_link
-#         run: |
-#           if [ -f drivers/amd/link.txt ]; then
-#             OLD_LINK=$(cat drivers/amd/link.txt)
-#             echo "OLD_LINK=$OLD_LINK" >> $GITHUB_ENV
-#             echo "Old link found: $OLD_LINK"
-#           else
-#             echo "OLD_LINK=not_exists" >> $GITHUB_ENV
-#             echo "No existing link file found"
-#           fi
-
-#       - name: Download JSON file
-#         run: |
-#           # Download the JSON file using curl
-#           curl -o config.json https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json || exit 1
-#           # Show content for debugging
-#           echo "Downloaded JSON:"
-#           cat config.json
-
-#       - name: Extract stable driver link
-#         id: extract_string
-#         run: |
-#           # Use jq to extract the stable driver link
-#           extracted_string=$(jq -r '.driver_links.stable' config.json)
-#           echo "Extracted driver link: $extracted_string"
-          
-#           # Output the extracted string to the specified path
-#           echo "$extracted_string" > drivers/amd/link.txt
-#           echo "NEW_LINK=$extracted_string" >> $GITHUB_ENV
-
-#       - name: Debug comparison
-#         run: |
-#           echo "OLD_LINK = $OLD_LINK"
-#           echo "NEW_LINK = $NEW_LINK"
-#           if [ "$OLD_LINK" != "$NEW_LINK" ]; then
-#             echo "Links are different - should commit changes"
-#           else
-#             echo "Links are identical - no changes needed"
-#           fi
-          
-#           echo "Git status:"
-#           git status
-          
-#           echo "Git diff:"
-#           git diff
-
-#       - name: Commit and push if changes detected
-#         run: |
-#           # Check if git sees any changes
-#           if git status --porcelain | grep -q "drivers/amd/link.txt"; then
-#             # File has changed according to git, commit it
-#             git config --global user.email "actions@users.noreply.github.com"
-#             git config --global user.name "Automated Action"
-#             git add drivers/amd/link.txt
-#             git commit -m "Update AMD stable driver link"
-#             git push
-#             echo "Updated AMD driver link from $OLD_LINK to $NEW_LINK"
-#           else
-#             echo "No changes detected in AMD driver link file according to git"
-#           fi
-
 name: Check and Update AMD Driver Link
 
 on:
@@ -98,9 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         
+      - name: Create directory structure
+        run: mkdir -p drivers/amd temp
+        
       - name: Download old link file
         run: |
-          mkdir -p temp
           curl -s https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/drivers/amd/link.txt -o temp/old_link.txt
       
       - name: Download config JSON
@@ -111,19 +27,36 @@ jobs:
         id: check_links
         run: |
           # Extract stable URL from JSON
-          NEW_LINK=$(jq -r '.driver_links.stable' temp/config.json)
+          NEW_LINK=$(cat temp/config.json | jq -r '.driver_links.stable')
           
-          # Get old link
-          OLD_LINK=$(cat temp/old_link.txt)
+          # Get old link (trim any whitespace)
+          OLD_LINK=$(cat temp/old_link.txt | tr -d '[:space:]')
+          
+          # Trim any whitespace from new link too
+          NEW_LINK=$(echo "$NEW_LINK" | tr -d '[:space:]')
           
           echo "Old link: $OLD_LINK"
           echo "New link: $NEW_LINK"
+          
+          # Check if both values were extracted properly
+          if [ -z "$NEW_LINK" ]; then
+            echo "Error: Failed to extract new link from JSON"
+            exit 1
+          fi
+          
+          if [ -z "$OLD_LINK" ]; then
+            echo "Warning: Old link file might be empty, will update anyway"
+          fi
           
           # Compare links
           if [ "$NEW_LINK" != "$OLD_LINK" ]; then
             echo "Links are different, updating link.txt"
             echo "$NEW_LINK" > drivers/amd/link.txt
             echo "updated=true" >> $GITHUB_OUTPUT
+            
+            # Debug: show the file we just created
+            echo "Content of the updated file:"
+            cat drivers/amd/link.txt
           else
             echo "Links are the same, no update needed"
             echo "updated=false" >> $GITHUB_OUTPUT
@@ -135,5 +68,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add drivers/amd/link.txt
-          git commit -m "Update AMD driver link"
-          git push
+          git status # Debug: show git status
+          git diff --staged # Debug: show what's staged
+          git commit -m "Update AMD driver link" || echo "No changes to commit"
+          git push origin || echo "No changes to push"

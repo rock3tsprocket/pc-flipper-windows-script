@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for proper git diff
 
       - name: Create directory structure if needed
         run: |
@@ -24,31 +26,54 @@ jobs:
         id: check_old_link
         run: |
           if [ -f drivers/amd/link.txt ]; then
-            echo "OLD_LINK=$(cat drivers/amd/link.txt)" >> $GITHUB_ENV
+            OLD_LINK=$(cat drivers/amd/link.txt)
+            echo "OLD_LINK=$OLD_LINK" >> $GITHUB_ENV
+            echo "Old link found: $OLD_LINK"
           else
             echo "OLD_LINK=not_exists" >> $GITHUB_ENV
+            echo "No existing link file found"
           fi
 
       - name: Download JSON file
         run: |
           # Download the JSON file using curl
           curl -o config.json https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json || exit 1
+          # Show content for debugging
+          echo "Downloaded JSON:"
+          cat config.json
 
       - name: Extract stable driver link
         id: extract_string
         run: |
           # Use jq to extract the stable driver link
           extracted_string=$(jq -r '.driver_links.stable' config.json)
+          echo "Extracted driver link: $extracted_string"
           
           # Output the extracted string to the specified path
           echo "$extracted_string" > drivers/amd/link.txt
           echo "NEW_LINK=$extracted_string" >> $GITHUB_ENV
 
+      - name: Debug comparison
+        run: |
+          echo "OLD_LINK = $OLD_LINK"
+          echo "NEW_LINK = $NEW_LINK"
+          if [ "$OLD_LINK" != "$NEW_LINK" ]; then
+            echo "Links are different - should commit changes"
+          else
+            echo "Links are identical - no changes needed"
+          fi
+          
+          echo "Git status:"
+          git status
+          
+          echo "Git diff:"
+          git diff
+
       - name: Commit and push if changes detected
         run: |
-          # Compare old and new links
-          if [ "$OLD_LINK" != "$NEW_LINK" ]; then
-            # Commit the new link.txt file with the extracted string
+          # Check if git sees any changes
+          if git status --porcelain | grep -q "drivers/amd/link.txt"; then
+            # File has changed according to git, commit it
             git config --global user.email "actions@users.noreply.github.com"
             git config --global user.name "Automated Action"
             git add drivers/amd/link.txt
@@ -56,5 +81,5 @@ jobs:
             git push
             echo "Updated AMD driver link from $OLD_LINK to $NEW_LINK"
           else
-            echo "No changes detected in AMD driver link"
+            echo "No changes detected in AMD driver link file according to git"
           fi

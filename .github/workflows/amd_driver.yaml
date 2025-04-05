@@ -1,0 +1,47 @@
+# ai generated amd driver thing
+name: Daily JSON Check
+
+on:
+  schedule:
+    # Runs the action daily at 1am (UTC).
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # Allows manual trigger as well
+
+jobs:
+  extract-string:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Download JSON file
+        run: |
+          # Download the JSON file using curl
+          curl -o config.json https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json || exit 1
+
+      - name: Extract stable driver link and ensure directory exists
+        id: extract_string
+        run: |
+          # Create directory structure if it doesn't exist
+          mkdir -p drivers/amd
+          
+          # Use jq to extract the stable driver link
+          extracted_string=$(jq -r '.driver_links.stable' config.json)
+          
+          # Output the extracted string to the specified path
+          echo "$extracted_string" > drivers/amd/link.txt
+
+      - name: Commit and push the extracted string to the repo
+        run: |
+          # Check if there are changes to commit
+          if git diff --quiet drivers/amd/link.txt; then
+            echo "No changes to commit"
+          else
+            # Commit the new link.txt file with the extracted string
+            git config --global user.email "actions@users.noreply.github.com"
+            git config --global user.name "Automated Action"
+            git add drivers/amd/link.txt
+            git commit -m "Update AMD stable driver link"
+            git push
+          fi

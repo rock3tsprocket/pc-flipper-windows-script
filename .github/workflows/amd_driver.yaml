@@ -1,74 +1,48 @@
-name: Check and Update AMD Driver Link
+name: AMD Driver Link Updater
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Run once a day at 2:00 AM UTC
+    - cron: '0 2 * * 0'  # Run once a week at 2:00 AM UTC
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  check-and-update-links:
+  update-amd-link:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         
       - name: Create directory structure
-        run: mkdir -p drivers/amd temp
+        run: mkdir -p drivers/amd
         
-      - name: Download old link file
-        run: |
-          curl -s https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/drivers/amd/link.txt -o temp/old_link.txt
-      
       - name: Download config JSON
         run: |
-          curl -s https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json -o temp/config.json
+          curl -s https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json -o config.json
       
-      - name: Check and update links
-        id: check_links
+      - name: Extract and update link
         run: |
           # Extract stable URL from JSON
-          NEW_LINK=$(cat temp/config.json | jq -r '.driver_links.stable')
+          NEW_LINK=$(cat config.json | jq -r '.driver_links.stable')
           
-          # Get old link (trim any whitespace)
-          OLD_LINK=$(cat temp/old_link.txt | tr -d '[:space:]')
-          
-          # Trim any whitespace from new link too
-          NEW_LINK=$(echo "$NEW_LINK" | tr -d '[:space:]')
-          
-          echo "Old link: $OLD_LINK"
           echo "New link: $NEW_LINK"
           
-          # Check if both values were extracted properly
+          # Check if value was extracted properly
           if [ -z "$NEW_LINK" ]; then
             echo "Error: Failed to extract new link from JSON"
             exit 1
           fi
           
-          if [ -z "$OLD_LINK" ]; then
-            echo "Warning: Old link file might be empty, will update anyway"
-          fi
+          # Always update the link.txt file
+          echo "$NEW_LINK" > drivers/amd/link.txt
           
-          # Compare links
-          if [ "$NEW_LINK" != "$OLD_LINK" ]; then
-            echo "Links are different, updating link.txt"
-            echo "$NEW_LINK" > drivers/amd/link.txt
-            echo "updated=true" >> $GITHUB_OUTPUT
-            
-            # Debug: show the file we just created
-            echo "Content of the updated file:"
-            cat drivers/amd/link.txt
-          else
-            echo "Links are the same, no update needed"
-            echo "updated=false" >> $GITHUB_OUTPUT
-          fi
+          # Debug: show the file we just created
+          echo "Content of the updated file:"
+          cat drivers/amd/link.txt
       
-      - name: Commit and push if changed
-        if: steps.check_links.outputs.updated == 'true'
+      - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add drivers/amd/link.txt
-          git status # Debug: show git status
-          git diff --staged # Debug: show what's staged
           git commit -m "Update AMD driver link" || echo "No changes to commit"
           git push origin || echo "No changes to push"

@@ -13,7 +13,7 @@ Set-Location -Path "$mainFolderPath"
 
 # SCRIPT DOWNLOADS
 New-Item -Type Directory -Path "$scriptDownloadPath"
-New-Item -Type Directoy -Path "$scriptDownloadPath\mas"
+New-Item -Type Directory -Path "$scriptDownloadPath\mas"
 
 # Main Script
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "$scriptDownloadPath\pc-flip-preparation-script.ps1"

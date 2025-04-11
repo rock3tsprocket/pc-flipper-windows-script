@@ -1,4 +1,4 @@
-. .\functions.ps1
+. "bin\functions.ps1"
 $ProgressPreference = 'SilentlyContinue' # for commands like invoke-webrequest/invoke-restmethod
 
 # Start Transcript

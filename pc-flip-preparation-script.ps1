@@ -1,28 +1,24 @@
-. "bin\functions.ps1"
+. .\functions.ps1
+$ProgressPreference = 'SilentlyContinue' # for commands like invoke-webrequest/invoke-restmethod
 
+# Start Transcript
+Start-Logging
+
+Write-Host "Checking for administrator privileges..."
 Test-AdminPrivileges
+Write-Host "Checking for internet and DNS..."
+Test-Internet
+# unless I overlooked something, this will only print when the checks are successful since both functions interrupt the script if they fail
+Write-Host -ForegroundColor Green "Success"
 
+# Install prerequisites and import modules
 Install-Prerequisites
 Import-Module AnyBox
 
-Install-GPUDrivers
+# Show the main window and run selected tasks
+$selectedTasks = Show-ScriptOptionsWindow
+Invoke-SelectedScriptTasks -Tasks $selectedTasks
 
-New-Item -Type Directory -Path "chipset"
-Install-ChipsetDrivers
-Write-Host "Chipset drivers have finished installing."
-
-Open-MotherboardDriverPage
-
-Start-WindowsTweaks
-Restart-WindowsExplorer
-
-$selectedApps = New-AppInstallerWindow
-Install-SelectedApps -SelectedApps $selectedApps
-
-if ($furmarkInstalled) {
-    Get-UserChoice -readHostMessage "[Y] Yes [N] No" -choicePrompt "It appears that you have installed FurMark, would you like to run a stress test?" -keys "Y", "N" -choiceActions @{
-        choiceIsY = { Start-FurmarkTest }
-    }
-}
-
+# Show completion dialog and stop transcript
 Show-ScriptCompleteBox
+Stop-Transcript

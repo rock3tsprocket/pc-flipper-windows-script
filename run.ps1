@@ -13,6 +13,7 @@ Set-Location -Path "$mainFolderPath"
 
 # SCRIPT DOWNLOADS
 New-Item -Type Directory -Path "$scriptDownloadPath"
+New-Item -Type Directoy -Path "$scriptDownloadPath\mas"
 
 # Main Script
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "$scriptDownloadPath\pc-flip-preparation-script.ps1"
@@ -25,4 +26,4 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force
 
 # Runs the main script
-powershell.exe ".\pc-flip-preparation-script.ps1"
+powershell.exe ".\bin\pc-flip-preparation-script.ps1"

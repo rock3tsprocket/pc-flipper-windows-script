@@ -228,7 +228,7 @@ function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a locati
     winget install --id TechPowerUp.NVCleanstall @wingetArgs
     Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
     if (Test-Path -Path "$nvcleanstallPath") {
-        Start-Process -Path "$nvcleanstallPath"
+        Start-Process -Path "$nvcleanstallPath" -Wait
         $msgBoxText = 'In the GUI that just opened, select the proper driver and install it.'
         [System.Windows.MessageBox]::Show("$msgBoxText", "Nvidia Drivers", "Ok", "Information")
     } else {
@@ -243,7 +243,7 @@ function Install-AMDDrivers { # Approved Verb ("Places a resource in a location,
     $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
     curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
     if (Test-Path -Path "$amdDrivers") {
-        Start-Process $amdDrivers
+        Start-Process $amdDrivers -Wait
     } else {
         Write-Host -ForegroundColor Red "Error: AMD driver installer not found at $amdDrivers."
     }
@@ -258,18 +258,18 @@ function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a locat
         curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "AMD chipset drivers successfully downloaded."
         Write-Host -ForegroundColor Green "Installing drivers..."
-        Start-Process "$chipsetDriverPath"
+        Start-Process "$chipsetDriverPath" -Wait
     } elseif ($currentCPU -like "*Intel*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_Intel.exe"
         Invoke-WebRequest -Uri "https://downloadmirror.intel.com/843223/SetupChipset.exe" -OutFile "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "Intel chipset drivers successfully downloaded."
         Write-Host -ForegroundColor Green "Installing drivers..."
-        Start-Process $chipsetDriverPath
+        Start-Process $chipsetDriverPath -Wait
     }
     Write-Host -ForegroundColor Green "Chipset drivers have finished installing."
 }
 
-Install-VCPPRedists {
+function Install-VCPPRedists {
     # detect if PC is 64-bit or 32-bit and set var
     $64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
 
@@ -405,14 +405,14 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         $Url = "https://openrgb.org/releases/release_0.9/OpenRGB_0.9_Windows_64_b5f46e3.zip"
         Write-Host -ForegroundColor Green "Installing OpenRGB..."
         Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer
+        Start-Process -FilePath $Installer -Wait
     }
     if ($SelectedApps.SignalRGB) {
         $Installer = "$DownloadPath\signalrgb-installer.exe"
         $Url = "https://release.signalrgb.com/Install_SignalRgb.exe"
         Write-Host -ForegroundColor Green "Installing SignalRGB..."
         Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer
+        Start-Process -FilePath $Installer -Wait
     }
     if ($SelectedApps.VLC) {
         Write-Host -ForegroundColor Green "Installing VLC media player..."
@@ -663,7 +663,7 @@ function Test-DotNet8Support {
 }
 
 function Show-ScriptCompleteBox { # Approved Verb ("Makes a resource visible to the user")
-    $null = Show-AnyBox -Title 'Script complete' -Message 'The script has finished running!', 'Please give it a star on GitHub!', 'Created by PowerPCFan' -Buttons 'Ok' -MinWidth 325 -MinHeight 150 -WindowStyle ToolWindow
+    $null = Show-AnyBox -Title 'Script complete' -Message 'The script has finished running!', 'Please give it a star on GitHub!', 'Created by PowerPCFan' -Buttons 'Ok' -MinWidth 325 -MinHeight 150
 }
 
 function Show-ScriptOptionsWindow {
@@ -960,27 +960,66 @@ function Show-ScriptOptionsWindow {
     # Continue button
     $continueButton = $window.FindName("ContinueButton")
     $continueButton.Add_Click({
-        $allCheckboxes = Get-AllCheckboxes
-        
-        # Store selections in local hashtable
-        foreach ($checkbox in $allCheckboxes) {
-            $taskOptions[$checkbox.Name] = $checkbox.IsChecked
+        # Get main section checkboxes first
+        $taskOptions["InstallGpuDrivers"] = $window.FindName("InstallGpuDrivers").IsChecked
+        $taskOptions["InstallChipsetDrivers"] = $window.FindName("InstallChipsetDrivers").IsChecked
+        $taskOptions["ShowMotherboardDriverPage"] = $window.FindName("ShowMotherboardDriverPage").IsChecked
+        $taskOptions["RunWindowsTweaks"] = $window.FindName("RunWindowsTweaks").IsChecked
+        $taskOptions["RunAppInstaller"] = $window.FindName("RunAppInstaller").IsChecked
+        $taskOptions["ActivateWindows"] = $window.FindName("ActivateWindows").IsChecked
+
+        # Handle Windows Activation nested options
+        if ($window.FindName("ActivateWindows").IsChecked) {
+            $taskOptions["ActivateWindowsMassgrave"] = $window.FindName("ActivateWindowsMassgrave").IsChecked
+            $taskOptions["ActivateWindowsKey"] = $window.FindName("ActivateWindowsKey").IsChecked
+            if ($window.FindName("ActivateWindowsKey").IsChecked) {
+                $taskOptions["WindowsProductKey"] = $window.FindName("WindowsProductKey").Text
+            }
+        } else {
+            $taskOptions["ActivateWindowsMassgrave"] = $false
+            $taskOptions["ActivateWindowsKey"] = $false
+            $taskOptions["WindowsProductKey"] = ""
         }
-        
-        # Store FurMark test parameters
-        $taskOptions["FurMarkDuration"] = $window.FindName("FurMarkDuration").Text
-        $taskOptions["FurMarkResolution"] = $window.FindName("FurMarkResolution").SelectedItem.Content.ToString()
-        $taskOptions["FurMarkAntiAliasing"] = $window.FindName("FurMarkAntiAliasing").SelectedItem.Content.ToString()
-        
-        # Store FurMark installation state
+
+        # Handle Application Installation nested options
+        if ($window.FindName("RunAppInstaller").IsChecked) {
+            # Get all app checkboxes
+            $appPanel = $window.FindName("AppInstallerPanel")
+            $appCheckboxes = $appPanel.Children | Where-Object { $_ -is [System.Windows.Controls.CheckBox] }
+            foreach ($checkbox in $appCheckboxes) {
+                $taskOptions[$checkbox.Name] = $checkbox.IsChecked
+            }
+
+            # Handle FurMark nested options
+            if ($window.FindName("FurMark").IsChecked) {
+                $taskOptions["RunFurmarkTest"] = $window.FindName("RunFurmarkTest").IsChecked
+                if ($window.FindName("RunFurmarkTest").IsChecked) {
+                    $taskOptions["FurMarkDuration"] = $window.FindName("FurMarkDuration").Text
+                    $taskOptions["FurMarkResolution"] = $window.FindName("FurMarkResolution").SelectedItem.Content.ToString()
+                    $taskOptions["FurMarkAntiAliasing"] = $window.FindName("FurMarkAntiAliasing").SelectedItem.Content.ToString()
+                }
+            } else {
+                $taskOptions["RunFurmarkTest"] = $false
+                $taskOptions["FurMarkDuration"] = ""
+                $taskOptions["FurMarkResolution"] = ""
+                $taskOptions["FurMarkAntiAliasing"] = ""
+            }
+        } else {
+            # If app installer is unchecked, clear all app-related options
+            $appPanel = $window.FindName("AppInstallerPanel")
+            $appCheckboxes = $appPanel.Children | Where-Object { $_ -is [System.Windows.Controls.CheckBox] }
+            foreach ($checkbox in $appCheckboxes) {
+                $taskOptions[$checkbox.Name] = $false
+            }
+            $taskOptions["RunFurmarkTest"] = $false
+            $taskOptions["FurMarkDuration"] = ""
+            $taskOptions["FurMarkResolution"] = ""
+            $taskOptions["FurMarkAntiAliasing"] = ""
+        }
+
+        # Always store FurMark installation state
         $taskOptions["FurmarkInstalled"] = $furmarkInstalled
 
-        # Store Windows activation settings
-        $taskOptions["ActivateWindows"] = $window.FindName("ActivateWindows").IsChecked
-        $taskOptions["ActivateWindowsMassgrave"] = $window.FindName("ActivateWindowsMassgrave").IsChecked
-        $taskOptions["ActivateWindowsKey"] = $window.FindName("ActivateWindowsKey").IsChecked
-        $taskOptions["WindowsProductKey"] = $window.FindName("WindowsProductKey").Text
-        
         $window.DialogResult = $true
         $window.Close()
     })

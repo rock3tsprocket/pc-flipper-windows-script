@@ -41,7 +41,7 @@ function Start-Logging {
         New-Item -Path "logs" -ItemType Directory | Out-Null
     }
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-    $fileName = "transcript_$timestamp"
+    $fileName = "transcript_$timestamp.log"
     Start-Transcript -Path "logs\$fileName"
 }
 
@@ -512,8 +512,6 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
     $script:wingetArgs = @(
         "--accept-package-agreements",
         "--accept-source-agreements",
-        "--disable-interactivity",
-        "--ignore-warnings",
         "--silent"
     )
 

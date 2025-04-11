@@ -17,8 +17,6 @@ New-Item -Type Directory -Path "$scriptDownloadPath\mas"
 
 # Main Script
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "$scriptDownloadPath\pc-flip-preparation-script.ps1"
-# functions.ps1
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/functions.ps1" -OutFile "$scriptDownloadPath\functions.ps1"
 # hwid.cmd
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/mas/hwid.cmd" -OutFile "$scriptDownloadPath\mas\hwid.cmd"
 

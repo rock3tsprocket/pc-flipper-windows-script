@@ -378,11 +378,8 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         winget install --id "Microsoft.DotNet.Runtime.9" @wingetArgs
     }
     if ($SelectedApps.Firefox) {
-        $Installer = "$DownloadPath\FirefoxInstaller.exe"
-        $Url = "https://download.mozilla.org/?product=firefox-stub&os=win&lang=en-US"
         Write-Host -ForegroundColor Green "Installing Mozilla Firefox..."
-        Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer -ArgumentList "/S" -Wait
+        winget install --id "Mozilla.Firefox"
     }
     if ($SelectedApps.Chrome) {
         Write-Host -ForegroundColor Green "Installing Google Chrome..."
@@ -401,18 +398,12 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         winget install --id "EpicGames.EpicGamesLauncher" @wingetArgs
     }
     if ($SelectedApps.OpenRGB) {
-        $Installer = "$DownloadPath\openrgb-installer.exe"
-        $Url = "https://openrgb.org/releases/release_0.9/OpenRGB_0.9_Windows_64_b5f46e3.zip"
         Write-Host -ForegroundColor Green "Installing OpenRGB..."
-        Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer -Wait
+        winget install --id "CalcProgrammer1.OpenRGB"
     }
     if ($SelectedApps.SignalRGB) {
-        $Installer = "$DownloadPath\signalrgb-installer.exe"
-        $Url = "https://release.signalrgb.com/Install_SignalRgb.exe"
         Write-Host -ForegroundColor Green "Installing SignalRGB..."
-        Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer -Wait
+        winget install --id "WhirlwindFX.SignalRgb"
     }
     if ($SelectedApps.VLC) {
         Write-Host -ForegroundColor Green "Installing VLC media player..."
@@ -436,11 +427,8 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         winget install --id "Guru3D.RTSS" @wingetArgs
     }
     if ($SelectedApps.FurMark) {
-        $Installer = "$DownloadPath\furmarkinstaller.exe"
-        $Url = "https://geeks3d.com/dl/get/738"
         Write-Host -ForegroundColor Green "Installing FurMark..."
-        Invoke-WebRequest -Uri $Url -OutFile $Installer
-        Start-Process -FilePath $Installer -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait
+        winget install --id "Geeks3D.FurMark"
 
         $furmarkInstalled = $true
     }
@@ -481,27 +469,27 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
     if ($SelectedApps.cpuz) {
         Write-Host -ForegroundColor Green "Installing CPU-Z..."
-        winget install --id CPUID.CPU-Z @wingetArgs
+        winget install --id "CPUID.CPU-Z" @wingetArgs
     }
     if ($SelectedApps.gpuz) {
         Write-Host -ForegroundColor Green "Installing GPU-Z..."
-        winget install --id TechPowerUp.GPU-Z @wingetArgs
+        winget install --id "TechPowerUp.GPU-Z" @wingetArgs
     }
     if ($SelectedApps.heaven) {
         Write-Host -ForegroundColor Green "Installing Unigine Heaven Benchmark..."
-        winget install --id Unigine.HeavenBenchmark @wingetArgs
+        winget install --id "Unigine.HeavenBenchmark" @wingetArgs
     }
     if ($SelectedApps.valley) {
         Write-Host -ForegroundColor Green "Installing Unigine Valley Benchmark..."
-        winget install --id Unigine.ValleyBenchmark @wingetArgs
+        winget install --id "Unigine.ValleyBenchmark" @wingetArgs
     }
     if ($SelectedApps.superposition) {
         Write-Host -ForegroundColor Green "Installing Unigine Superposition Benchmark..."
-        winget install --id Unigine.SuperpositionBenchmark @wingetArgs
+        winget install --id "Unigine.SuperpositionBenchmark" @wingetArgs
     }
     if ($SelectedApps.revo) {
         Write-Host -ForegroundColor Green "Installing Revo Uninstaller..."
-        winget install --id RevoUninstaller.RevoUninstaller @wingetArgs
+        winget install --id "RevoUninstaller.RevoUninstaller" @wingetArgs
     }
 
     return $furmarkInstalled

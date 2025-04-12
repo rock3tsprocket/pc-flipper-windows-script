@@ -176,13 +176,12 @@ function Start-FurmarkTest { # Approved Verb ("Initiates an operation")
 }
 
 function Install-GPUDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 } | Select-Object Name, AdapterRAM, DriverVersion
     if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
         Install-NvidiaDrivers
     } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
         Install-AMDDrivers
     } elseif ($gpu -like "*Intel*") {
-        # Clear-Host
+        
         Write-Host "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
         Read-Host "Press ENTER to skip the GPU driver part of this script."
     } else {
@@ -251,15 +250,14 @@ function Install-AMDDrivers { # Approved Verb ("Places a resource in a location,
 
 function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     New-Item -Type Directory -Path "chipset"
-    $currentCPU = (Get-CimInstance Win32_Processor).Name
-    if ($currentCPU -like "*AMD*") {
+    if ($cpu -like "*AMD*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_AMD.exe"
         $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
         curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "AMD chipset drivers successfully downloaded."
         Write-Host "Installing drivers..."
         Start-Process "$chipsetDriverPath" -Wait
-    } elseif ($currentCPU -like "*Intel*") {
+    } elseif ($cpu -like "*Intel*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_Intel.exe"
         Invoke-WebRequest -Uri "https://downloadmirror.intel.com/843223/SetupChipset.exe" -OutFile "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "Intel chipset drivers successfully downloaded."
@@ -272,26 +270,15 @@ function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a locat
 function Install-VCPPRedists {
     $VCRedistYears = @("2005", "2008", "2010", "2012", "2013", "2015+")
 
-    # detect if PC is 64-bit or 32-bit and set var
-    $64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
-
     if ($64BitOperatingSystem) {
         Write-Host "64-bit OS detected. 32-bit and 64-bit redistributables will be installed."
     } else {
         Write-Host "32-bit OS detected. 32-bit redistributables will be installed."
     }
     
-    # 32-bit (installs no matter what)
-    Write-Host "Installing 32-bit redistributables..."
     foreach ($year in $VCRedistYears) {
         winget install --id "Microsoft.VCRedist.$year.x86" @wingetArgs
-    }
-
-    # 64-bit (only installs if $64BitOperatingSystem is $true)
-    if ($64BitOperatingSystem) {
-        Write-Host "Installing 64-bit redistributables..."
-        
-        foreach ($year in $VCRedistYears) {
+        if ($64BitOperatingSystem) {
             winget install --id "Microsoft.VCRedist.$year.x64" @wingetArgs
         }
     }
@@ -305,18 +292,12 @@ function Install-VCPPRedists {
 }
 
 function Show-MotherboardDriverPage { # Approved Verb ("Makes a resource visible to the user")
-    param (
-        [string]$Board = (Get-CimInstance Win32_BaseBoard -Property Product).Product,
-        [string]$Manufacturer = (Get-CimInstance Win32_BaseBoard -property Manufacturer).Manufacturer
-    )
-    
-    $fullMotherboardName = "$Manufacturer $Board"
     $searchUrl = "https://duckduckgo.com/?q=motherboard+drivers+for+$($fullMotherboardName -replace ' ', '+')"
     Start-Process $searchUrl
 }
 
 function Start-WindowsTweaks { # Approved Verb ("Initiates an operation")
-	# Clear-Host
+	
  	Write-Host "--- Windows Tweaks ---"
 	
 	Write-Host "Disabling Location Services..."
@@ -341,13 +322,12 @@ function Start-WindowsTweaks { # Approved Verb ("Initiates an operation")
 	reg.exe add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "0" /f
 	
 	# Check if the OS is Windows 11
-	$windowsOSVersion = (systeminfo | findstr /B /C:"OS Name")
 	if ($windowsOSVersion -like "*Windows 11*") {
 		Write-Host "Windows 11 detected! Aligning taskbar to the left..."
 		reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAl" /t REG_DWORD /d "0" /f > $null
 	}
 	
-	# Clear-Host
+	
 	Write-Host -ForegroundColor Green "Windows tweaks complete."
 }
 
@@ -486,13 +466,52 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     return $furmarkInstalled
 }
 
-function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
+function New-SpecSheet {
+$html = @"
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Spec Sheet</title>
+    </head>
+    <body>
+        <h1>CPU:</h1>
+    </body>
+    </html>
+"@
+
+    New-Item -ItemType Directory -Path $folderName | Out-Null
+    $folderName = "specsheet"
+    $filePath = "$folderName\index.html"
+    [System.IO.File]::WriteAllText($filePath, $html, [System.Text.Encoding]::UTF8)
+    Start-Process $filePath
+}
+
+function Set-ScriptVariables {
     # Define standard winget parameters
     $script:wingetArgs = @(
         "--accept-package-agreements",
         "--accept-source-agreements",
         "--silent"
     )
+
+    $script:windowsOSVersion = (systeminfo | findstr /B /C:"OS Name")
+    $script:64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
+
+    $script:Board = (Get-CimInstance Win32_BaseBoard -Property Product).Product
+    $script:Manufacturer = (Get-CimInstance Win32_BaseBoard -property Manufacturer).Manufacturer
+    $script:fullMotherboardName = "$Manufacturer $Board"
+
+    $script:gpu = (Get-CimInstance Win32_VideoController | Where-Object { $_.Status -eq 'OK' -and $_.Availability -eq 3 }).Name
+
+    $script:cpu = (Get-CimInstance Win32_Processor).Name
+
+    $gb = (((Get-CimInstance -ClassName Win32_PhysicalMemory) | Measure-Object -Property Capacity -Sum).Sum) / 1GB
+    $script:ramCapacity = if ($gb -eq [math]::Truncate($gb)) { "$([int]$gb) GB" } else { "{0:N2} GB" -f $gb }
+}
+
+function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
 
     # NuGet
     try {
@@ -602,7 +621,6 @@ function Test-DNSResolver {
     }
     return $false
 }
-
 function Test-Internet { # "container" for Test-NetworkConnection and Test-DNSResolver
     $myIps = @("8.8.8.8", "1.1.1.1", "9.9.9.9", "8.8.4.4", "1.0.0.1")
     $myDomains = @("www.github.com", "www.google.com", "www.cloudflare.com", "www.microsoft.com")
@@ -642,7 +660,12 @@ function Test-DotNet8Support {
 }
 
 function Show-ScriptCompleteBox { # Approved Verb ("Makes a resource visible to the user")
-    $null = Show-AnyBox -Title 'Script complete' -Message 'The script has finished running!', 'Please give it a star on GitHub!', 'Created by PowerPCFan' -Buttons 'Ok' -MinWidth 325 -MinHeight 150
+    $null = Show-AnyBox `
+    -Title 'Script complete' `
+    -Message 'The script has finished running!', 'Please give it a star on GitHub!', 'Created by PowerPCFan' `
+    -Buttons 'Ok' `
+    -MinWidth 325 `
+    -MinHeight 150
 }
 
 function Show-ScriptOptionsWindow {
@@ -1157,11 +1180,9 @@ function Start-WindowsActivation {
 
 
 
-
-
-
-
 $ProgressPreference = 'SilentlyContinue' # for commands like invoke-webrequest/invoke-restmethod
+
+Set-ScriptVariables
 
 # Start Transcript
 Start-Logging

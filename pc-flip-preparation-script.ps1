@@ -270,6 +270,8 @@ function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a locat
 }
 
 function Install-VCPPRedists {
+    $VCRedistYears = @("2005", "2008", "2010", "2012", "2013", "2015+")
+
     # detect if PC is 64-bit or 32-bit and set var
     $64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
 
@@ -281,22 +283,17 @@ function Install-VCPPRedists {
     
     # 32-bit (installs no matter what)
     Write-Host "Installing 32-bit redistributables..." -ForegroundColor Green
-    winget install --id "Microsoft.VCRedist.2005.x86" @wingetArgs
-    winget install --id "Microsoft.VCRedist.2008.x86" @wingetArgs
-    winget install --id "Microsoft.VCRedist.2010.x86" @wingetArgs
-    winget install --id "Microsoft.VCRedist.2012.x86" @wingetArgs
-    winget install --id "Microsoft.VCRedist.2013.x86" @wingetArgs
-    winget install --id "Microsoft.VCRedist.2015+.x86" @wingetArgs
+    foreach ($year in $VCRedistYears) {
+        winget install --id "Microsoft.VCRedist.$year.x86" @wingetArgs
+    }
 
     # 64-bit (only installs if $64BitOperatingSystem is $true)
     if ($64BitOperatingSystem) {
         Write-Host "Installing 64-bit redistributables..." -ForegroundColor Green
-        winget install --id "Microsoft.VCRedist.2005.x64" @wingetArgs
-        winget install --id "Microsoft.VCRedist.2008.x64" @wingetArgs
-        winget install --id "Microsoft.VCRedist.2010.x64" @wingetArgs
-        winget install --id "Microsoft.VCRedist.2012.x64" @wingetArgs
-        winget install --id "Microsoft.VCRedist.2013.x64" @wingetArgs
-        winget install --id "Microsoft.VCRedist.2015+.x64" @wingetArgs
+        
+        foreach ($year in $VCRedistYears) {
+            winget install --id "Microsoft.VCRedist.$year.x64" @wingetArgs
+        }
     }
 
     if ($64BitOperatingSystem) {
@@ -369,17 +366,15 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         Install-VCPPRedists
     }
     if ($SelectedApps.dotnet) {
+        $dotnetRuntimeVersions = @("3_1", "5", "6", "7", "8", "9")
         Write-Host -ForegroundColor Green "Installing .NET Runtimes..."
-        winget install --id "Microsoft.DotNet.Runtime.3_1" @wingetArgs
-        winget install --id "Microsoft.DotNet.Runtime.5" @wingetArgs
-        winget install --id "Microsoft.DotNet.Runtime.6" @wingetArgs
-        winget install --id "Microsoft.DotNet.Runtime.7" @wingetArgs
-        winget install --id "Microsoft.DotNet.Runtime.8" @wingetArgs
-        winget install --id "Microsoft.DotNet.Runtime.9" @wingetArgs
+        foreach ($version in $dotnetRuntimeVersions) {
+            winget install --id "Microsoft.DotNet.Runtime.$version" @wingetArgs
+        }
     }
     if ($SelectedApps.Firefox) {
         Write-Host -ForegroundColor Green "Installing Mozilla Firefox..."
-        winget install --id "Mozilla.Firefox"
+        winget install --id "Mozilla.Firefox" @wingetArgs
     }
     if ($SelectedApps.Chrome) {
         Write-Host -ForegroundColor Green "Installing Google Chrome..."
@@ -399,11 +394,11 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
     if ($SelectedApps.OpenRGB) {
         Write-Host -ForegroundColor Green "Installing OpenRGB..."
-        winget install --id "CalcProgrammer1.OpenRGB"
+        winget install --id "CalcProgrammer1.OpenRGB" @wingetArgs
     }
     if ($SelectedApps.SignalRGB) {
         Write-Host -ForegroundColor Green "Installing SignalRGB..."
-        winget install --id "WhirlwindFX.SignalRgb"
+        winget install --id "WhirlwindFX.SignalRgb" @wingetArgs
     }
     if ($SelectedApps.VLC) {
         Write-Host -ForegroundColor Green "Installing VLC media player..."
@@ -428,7 +423,7 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
     if ($SelectedApps.FurMark) {
         Write-Host -ForegroundColor Green "Installing FurMark..."
-        winget install --id "Geeks3D.FurMark"
+        winget install --id "Geeks3D.FurMark" @wingetArgs
 
         $furmarkInstalled = $true
     }
@@ -454,16 +449,12 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
     if ($SelectedApps.fancontrol) {
         Write-Host -ForegroundColor Green "Installing FanControl..."
-        # Get the download URL of the latest FanControl installer from GitHub API:
-        $api = "https://api.github.com/repos/Rem0o/FanControl.Releases/releases/latest"
-        if (Test-DotNet8Support) {
-            $uri = $(Invoke-RestMethod $api).assets.browser_download_url | Where-Object {$_.EndsWith("8_0_Installer.exe")}
-            $outfile = "$DownloadPath\fancontrol_dotnet8_0.exe"
-        } else {
-            $uri = $(Invoke-RestMethod $api).assets.browser_download_url | Where-Object {$_.EndsWith("4_8_Installer.exe")}
-            $outfile = "$DownloadPath\fancontrol_dotnet4_8.exe"
-        }
 
+        if (Test-DotNet8Support) { $dotnetVersion = "8_0" } else { $dotnetVersion = "4_8" }
+        
+        $api = "https://api.github.com/repos/Rem0o/FanControl.Releases/releases/latest"
+        $uri = $(Invoke-RestMethod $api).assets.browser_download_url | Where-Object {$_.EndsWith("8_0_Installer.exe")}
+        $outfile = "$DownloadPath\fancontrol_dotnet$dotnetVersion.exe"
         Invoke-WebRequest -Uri $uri -OutFile $outfile
         Start-Process -FilePath $outfile -ArgumentList "/silent /norestart"
     }

@@ -224,7 +224,7 @@ function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a locati
     # }
 
     $nvcleanstallPath = "$env:ProgramFiles\NVCleanstall\NVCleanstall.exe"
-    Write-Host "Nvidia GPU detected. Installing NVCleanstall..."
+    Write-Host "Nvidia GPU detected, installing NVCleanstall..."
     winget install --id TechPowerUp.NVCleanstall @wingetArgs
     Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
     if (Test-Path -Path "$nvcleanstallPath") {
@@ -507,7 +507,7 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
     try {
         winget --version | Out-Null  # This will suppress version output but still catch errors
     } catch {
-        Write-Host -ForegroundColor Red "Winget not present / outdated. Installing Winget..."
+        Write-Host "Winget not present / outdated. Installing Winget..." -ForegroundColor Red
         # Get the download URL of the latest winget installer from GitHub:
         $API_URL = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
         $DOWNLOAD_URL = $(Invoke-RestMethod $API_URL).assets.browser_download_url | Where-Object {$_.EndsWith(".msixbundle")}
@@ -530,11 +530,11 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
     # old code
     # Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm
 
-    if (-not (Get-PackageProvider -Name NuGet -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' })) {
-        Write-Host "NuGet 2.8.5.201 or higher is not installed. Installing now..."
+    if (-not (Get-PackageProvider -Name NuGet -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' }) | Out-Null) {
+        Write-Host "NuGet 2.8.5.201 or higher is not installed. Installing now..." -ForegroundColor Yellow
         Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm:$false
     } else {
-        Write-Host "NuGet 2.8.5.201 or higher is already installed."
+        Write-Host "NuGet 2.8.5.201 or higher is already installed." -ForegroundColor Green
     }
 
     # anybox

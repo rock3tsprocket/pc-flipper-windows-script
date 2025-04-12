@@ -257,13 +257,13 @@ function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a locat
         $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
         curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "AMD chipset drivers successfully downloaded."
-        Write-Host -ForegroundColor Green "Installing drivers..."
+        Write-Host "Installing drivers..."
         Start-Process "$chipsetDriverPath" -Wait
     } elseif ($currentCPU -like "*Intel*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_Intel.exe"
         Invoke-WebRequest -Uri "https://downloadmirror.intel.com/843223/SetupChipset.exe" -OutFile "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "Intel chipset drivers successfully downloaded."
-        Write-Host -ForegroundColor Green "Installing drivers..."
+        Write-Host "Installing drivers..."
         Start-Process $chipsetDriverPath -Wait
     }
     Write-Host -ForegroundColor Green "Chipset drivers have finished installing."
@@ -276,20 +276,20 @@ function Install-VCPPRedists {
     $64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
 
     if ($64BitOperatingSystem) {
-        Write-Host -ForegroundColor Green "64-bit OS detected. 32-bit and 64-bit redistributables will be installed."
+        Write-Host "64-bit OS detected. 32-bit and 64-bit redistributables will be installed."
     } else {
-        Write-Host -ForegroundColor Green "32-bit OS detected. 32-bit redistributables will be installed."
+        Write-Host "32-bit OS detected. 32-bit redistributables will be installed."
     }
     
     # 32-bit (installs no matter what)
-    Write-Host "Installing 32-bit redistributables..." -ForegroundColor Green
+    Write-Host "Installing 32-bit redistributables..."
     foreach ($year in $VCRedistYears) {
         winget install --id "Microsoft.VCRedist.$year.x86" @wingetArgs
     }
 
     # 64-bit (only installs if $64BitOperatingSystem is $true)
     if ($64BitOperatingSystem) {
-        Write-Host "Installing 64-bit redistributables..." -ForegroundColor Green
+        Write-Host "Installing 64-bit redistributables..."
         
         foreach ($year in $VCRedistYears) {
             winget install --id "Microsoft.VCRedist.$year.x64" @wingetArgs
@@ -319,25 +319,25 @@ function Start-WindowsTweaks { # Approved Verb ("Initiates an operation")
 	# Clear-Host
  	Write-Host "--- Windows Tweaks ---"
 	
-	Write-Output "Disabling Location Services..."
+	Write-Host "Disabling Location Services..."
 	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v "Value" /t REG_SZ /d "Deny" /f > $null
 	
-	Write-Output "Disabling Windows Error Reporting..."
+	Write-Host "Disabling Windows Error Reporting..."
 	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d "1" /f > $null
 	
-	Write-Output "Enabling Long File Paths..."
+	Write-Host "Enabling Long File Paths..."
 	reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v "LongPathsEnabled" /t REG_DWORD /d "1" /f > $null
 	
     Write-Host "Disabling Search Box Suggestions in start menu..."
 	reg.exe add "HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v "DisableSearchBoxSuggestions" /t REG_DWORD /d "1" /f > $null
 
-	Write-Output "Enabling Dark Mode..."
+	Write-Host "Enabling Dark Mode..."
 	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f > $null
 	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v ColorPrevalence /t REG_DWORD /d 0 /f > $null
 	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f > $null
 	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f > $null
 	
-	Write-Output "Disabling Sticky Keys..."
+	Write-Host "Disabling Sticky Keys..."
 	reg.exe add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "0" /f
 	
 	# Check if the OS is Windows 11
@@ -362,93 +362,93 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     $furmarkInstalled = $false
 
     if ($SelectedApps.redist) {
-        Write-Host -ForegroundColor Green "Installing Visual C++ Redist Runtimes..."
+        Write-Host "Installing Visual C++ Redist Runtimes..."
         Install-VCPPRedists
     }
     if ($SelectedApps.dotnet) {
         $dotnetRuntimeVersions = @("3_1", "5", "6", "7", "8", "9")
-        Write-Host -ForegroundColor Green "Installing .NET Runtimes..."
+        Write-Host "Installing .NET Runtimes..."
         foreach ($version in $dotnetRuntimeVersions) {
             winget install --id "Microsoft.DotNet.Runtime.$version" @wingetArgs
         }
     }
     if ($SelectedApps.Firefox) {
-        Write-Host -ForegroundColor Green "Installing Mozilla Firefox..."
+        Write-Host "Installing Mozilla Firefox..."
         winget install --id "Mozilla.Firefox" @wingetArgs
     }
     if ($SelectedApps.Chrome) {
-        Write-Host -ForegroundColor Green "Installing Google Chrome..."
+        Write-Host "Installing Google Chrome..."
         winget install --id "Google.Chrome.EXE" @wingetArgs
     }
     if ($SelectedApps.Steam) {
-        Write-Host -ForegroundColor Green "Installing Steam..."
+        Write-Host "Installing Steam..."
         winget install --id "Valve.Steam" @wingetArgs
     }
     if ($SelectedApps.Discord) {
-        Write-Host -ForegroundColor Green "Installing Discord..."
+        Write-Host "Installing Discord..."
         winget install --id "Discord.Discord" @wingetArgs
     }
     if ($SelectedApps.EpicGamesLauncher) {
-        Write-Host -ForegroundColor Green "Installing Epic Games Launcher..."
+        Write-Host "Installing Epic Games Launcher..."
         winget install --id "EpicGames.EpicGamesLauncher" @wingetArgs
     }
     if ($SelectedApps.OpenRGB) {
-        Write-Host -ForegroundColor Green "Installing OpenRGB..."
+        Write-Host "Installing OpenRGB..."
         winget install --id "CalcProgrammer1.OpenRGB" @wingetArgs
     }
     if ($SelectedApps.SignalRGB) {
-        Write-Host -ForegroundColor Green "Installing SignalRGB..."
+        Write-Host "Installing SignalRGB..."
         winget install --id "WhirlwindFX.SignalRgb" @wingetArgs
     }
     if ($SelectedApps.VLC) {
-        Write-Host -ForegroundColor Green "Installing VLC media player..."
+        Write-Host "Installing VLC media player..."
         winget install --id "VideoLAN.VLC" @wingetArgs
     }
     if ($SelectedApps.SevenZip) {
-        Write-Host -ForegroundColor Green "Installing 7-Zip..."
+        Write-Host "Installing 7-Zip..."
         winget install --id "7zip.7zip" @wingetArgs
     }
     if ($SelectedApps.Malwarebytes) {
-        Write-Host -ForegroundColor Green "Installing Malwarebytes Anti-Malware..."
+        Write-Host "Installing Malwarebytes Anti-Malware..."
         winget install --id "Malwarebytes.Malwarebytes" @wingetArgs
     }
     if ($SelectedApps.HWMonitor) {
-        Write-Host -ForegroundColor Green "Installing CPUID HWMonitor..."
+        Write-Host "Installing CPUID HWMonitor..."
         winget install --id "CPUID.HWMonitor" @wingetArgs
     }
     if ($SelectedApps.MSIAfterburner) {
-        Write-Host -ForegroundColor Green "Installing MSI Afterburner and RivaTuner Statistics Server..."
+        Write-Host "Installing MSI Afterburner and RivaTuner Statistics Server..."
         winget install --id "Guru3D.Afterburner" @wingetArgs
         winget install --id "Guru3D.RTSS" @wingetArgs
     }
     if ($SelectedApps.FurMark) {
-        Write-Host -ForegroundColor Green "Installing FurMark..."
+        Write-Host "Installing FurMark..."
         winget install --id "Geeks3D.FurMark" @wingetArgs
 
         $furmarkInstalled = $true
     }
     if ($SelectedApps.OCCT) {
-        Write-Host -ForegroundColor Green "Installing OCCT..."
+        Write-Host "Installing OCCT..."
         winget install --id "OCBase.OCCT.Personal" @wingetArgs
     }
     if ($SelectedApps.Cinebench) {
-        Write-Host -ForegroundColor Green "Installing Cinebench R23..."
+        Write-Host "Installing Cinebench R23..."
         winget install --id "Maxon.CinebenchR23" @wingetArgs
     }
     if ($SelectedApps.CrystalDiskMark) {
-        Write-Host -ForegroundColor Green "Installing CrystalDiskMark..."
+        Write-Host "Installing CrystalDiskMark..."
         winget install --id "CrystalDewWorld.CrystalDiskMark" @wingetArgs
     }
     if ($SelectedApps.CrystalDiskInfo) {
-        Write-Host -ForegroundColor Green "Installing CrystalDiskInfo..."
+        Write-Host "Installing CrystalDiskInfo..."
         winget install --id "CrystalDewWorld.CrystalDiskInfo" @wingetArgs
     }
     if ($SelectedApps.aida64) {
-        Write-Host -ForegroundColor Green "Installing AIDA64..."
+        Write-Host "Installing AIDA64..."
         winget install --id "FinalWire.AIDA64.Extreme" @wingetArgs
     }
     if ($SelectedApps.fancontrol) {
-        Write-Host -ForegroundColor Green "Installing FanControl..."
+        Write-Host "Installing FanControl..."
 
         if (Test-DotNet8Support) { $dotnetVersion = "8_0" } else { $dotnetVersion = "4_8" }
         
@@ -459,27 +459,27 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         Start-Process -FilePath $outfile -ArgumentList "/silent /norestart"
     }
     if ($SelectedApps.cpuz) {
-        Write-Host -ForegroundColor Green "Installing CPU-Z..."
+        Write-Host "Installing CPU-Z..."
         winget install --id "CPUID.CPU-Z" @wingetArgs
     }
     if ($SelectedApps.gpuz) {
-        Write-Host -ForegroundColor Green "Installing GPU-Z..."
+        Write-Host "Installing GPU-Z..."
         winget install --id "TechPowerUp.GPU-Z" @wingetArgs
     }
     if ($SelectedApps.heaven) {
-        Write-Host -ForegroundColor Green "Installing Unigine Heaven Benchmark..."
+        Write-Host "Installing Unigine Heaven Benchmark..."
         winget install --id "Unigine.HeavenBenchmark" @wingetArgs
     }
     if ($SelectedApps.valley) {
-        Write-Host -ForegroundColor Green "Installing Unigine Valley Benchmark..."
+        Write-Host "Installing Unigine Valley Benchmark..."
         winget install --id "Unigine.ValleyBenchmark" @wingetArgs
     }
     if ($SelectedApps.superposition) {
-        Write-Host -ForegroundColor Green "Installing Unigine Superposition Benchmark..."
+        Write-Host "Installing Unigine Superposition Benchmark..."
         winget install --id "Unigine.SuperpositionBenchmark" @wingetArgs
     }
     if ($SelectedApps.revo) {
-        Write-Host -ForegroundColor Green "Installing Revo Uninstaller..."
+        Write-Host "Installing Revo Uninstaller..."
         winget install --id "RevoUninstaller.RevoUninstaller" @wingetArgs
     }
 
@@ -494,42 +494,44 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
         "--silent"
     )
 
-    # WinGet
-    try {
-        winget --version | Out-Null  # This will suppress version output but still catch errors
-    } catch {
-        Write-Host "Winget not present / outdated. Installing Winget..." -ForegroundColor Red
-        # Get the download URL of the latest winget installer from GitHub:
-        $API_URL = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
-        $DOWNLOAD_URL = $(Invoke-RestMethod $API_URL).assets.browser_download_url | Where-Object {$_.EndsWith(".msixbundle")}
-
-        $installerName = "winget.msixbundle"
-
-        # Download the installer:
-        Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $installerName -UseBasicParsing
-
-        # Install winget:
-        Add-AppxPackage $installerName
-
-        # Remove the installer:
-        Remove-IfExists -Path $installerName
-    }
-
-
     # NuGet
+    try {
+        $null = Get-PackageProvider -Name NuGet -ErrorAction Stop -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' }
 
-    # old code
-    # Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm
-
-    if (-not (Get-PackageProvider -Name NuGet -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' }) | Out-Null) {
-        Write-Host "NuGet 2.8.5.201 or higher is not installed. Installing now..." -ForegroundColor Yellow
-        Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm:$false
-    } else {
         Write-Host "NuGet 2.8.5.201 or higher is already installed." -ForegroundColor Green
+    } catch {
+        Write-Host "NuGet 2.8.5.201 or higher is not installed. Installing now..." -ForegroundColor Yellow
+        try {
+            Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5.201' -Force -Confirm:$false
+            Write-Host "NuGet installed successfully." -ForegroundColor Green
+        } catch {
+            Write-Host "Error installing NuGet: $_" -ForegroundColor Red
+        }
     }
 
     # anybox
     Install-PSModule -ModuleName 'AnyBox' -RequiredVersion '0.5.1'
+
+    # winget powershell module
+    Install-PSModule -ModuleName 'Microsoft.WinGet.Client' -RequiredVersion '1.10.340'
+
+    # WinGet
+    try {
+        winget --version | Out-Null
+
+        Write-Host "WinGet is already installed." -ForegroundColor Green
+    } catch {
+        Write-Host "WinGet not installed. Installing WinGet..." -ForegroundColor Yellow
+        try { 
+            Repair-WinGetPackageManager -AllUsers *>&1 | Out-Null
+            $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+            if ($userPath -notlike '*\Microsoft\WindowsApps*') { [Environment]::SetEnvironmentVariable('Path', $userPath + ";%LOCALAPPDATA%\Microsoft\WindowsApps", 'User') }
+            Add-AppxPackage -RegisterByFamilyName -MainPackage "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+            Write-Host "WinGet installed successfully." -ForegroundColor Green
+        } catch { 
+            Write-Host "Error installing WinGet: $_" -ForegroundColor Red
+        }
+    }
 }
 
 function Restart-WindowsExplorer { # Approved Verb ("Stops an operation and then starts it again")
@@ -1166,12 +1168,13 @@ Start-Logging
 
 Write-Host "Checking for administrator privileges..."
 Test-AdminPrivileges
-Write-Host "Checking for internet and DNS..."
+Write-Host "Checking internet connectivity..."
 Test-Internet
 # unless I overlooked something, this will only print when the checks are successful since both functions interrupt the script if they fail
 Write-Host -ForegroundColor Green "Success"
 
 # Install prerequisites and import modules
+Write-Host "Installing prerequisites..."
 Install-Prerequisites
 Import-Module AnyBox
 

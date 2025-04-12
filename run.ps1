@@ -27,8 +27,6 @@ $lfcontent = (Invoke-WebRequest -UseBasicParsing -Uri $masUrl).Content
 $crlfContent = $lfcontent -replace "`r?`n", "`r`n"
 [System.IO.File]::WriteAllText($masOutFilePath, $crlfContent, [System.Text.Encoding]::UTF8)
 
-# Changes PowerShell's execution policy to Unrestricted
+# Changes PowerShell's execution policy to Unrestricted and run script
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force
-
-# Runs the main script
 powershell.exe ".\bin\pc-flip-preparation-script.ps1"

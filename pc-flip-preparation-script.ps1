@@ -957,15 +957,6 @@ function Show-ScriptOptionsWindow {
     $runFurmarkTest = $window.FindName("RunFurmarkTest")
     $furMarkCheckbox = $window.FindName("FurMark")
     
-    # Check if FurMark is installed and update tooltip/enabled state
-    $furmarkPath = "${env:ProgramFiles(x86)}\Geeks3D\Benchmarks\FurMark\FurMark.exe"
-    $furmarkInstalled = Test-Path -Path $furmarkPath
-    
-    if (-not $furmarkInstalled) {
-        $runFurmarkTest.IsEnabled = $false
-        $runFurmarkTest.ToolTip = "FurMark is not installed. This option will be available after installing FurMark."
-    }
-
     # Toggle visibility of app installer panel based on RunAppInstaller checkbox
     $runAppInstaller.Add_Checked({
         $appInstallerPanel.Visibility = [System.Windows.Visibility]::Visible
@@ -978,13 +969,17 @@ function Show-ScriptOptionsWindow {
     # Toggle visibility of FurMark sub-options based on FurMark checkbox
     $furMarkCheckbox.Add_Checked({
         $furMarkSubOptions.Visibility = [System.Windows.Visibility]::Visible
+        $runFurmarkTest.IsEnabled = $true
+        $runFurmarkTest.ToolTip = $null
     })
     
     $furMarkCheckbox.Add_Unchecked({
         $furMarkSubOptions.Visibility = [System.Windows.Visibility]::Collapsed
         $runFurmarkTest.IsChecked = $false
+        $runFurmarkTest.IsEnabled = $false  
+        $runFurmarkTest.ToolTip = "Enable FurMark installation to enable stress testing"
     })
-    
+
     # Get FurMark test options panel
     $furMarkTestOptions = $window.FindName("FurMarkTestOptions")
     
@@ -1315,7 +1310,8 @@ Write-Host -ForegroundColor Green "Success"
 # Install prerequisites and import modules
 Write-Host "Installing prerequisites..."
 Install-Prerequisites
-Import-Module AnyBox
+Import-Module -Name "AnyBox"
+Import-Module -Name "Microsoft.WinGet.Client"
 
 # Show the main window and run selected tasks
 $selectedTasks = Show-ScriptOptionsWindow

@@ -6,15 +6,15 @@ $scriptDownloadPathFull = "$mainFolderPath\$scriptDownloadPath"
 if (Test-Path -Path "$mainFolderPath") { Remove-Item -Recurse -Force -Confirm:$false -Path "$mainFolderPath" }
 
 # Creates new directory for files and scripts
-New-Item -Type Directory -Path "$mainFolderPath"
+New-Item -Type Directory -Path "$mainFolderPath" | Out-Null
 
 # Sets location to the script folder
 Set-Location -Path "$mainFolderPath"
 
 
 # SCRIPT DOWNLOADS
-New-Item -Type Directory -Path "$scriptDownloadPath"
-New-Item -Type Directory -Path "$scriptDownloadPath\mas"
+New-Item -Type Directory -Path "$scriptDownloadPath" | Out-Null
+New-Item -Type Directory -Path "$scriptDownloadPath\mas" | Out-Null
 
 # Main Script
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/pc-flipper-windows-script/refs/heads/main/pc-flip-preparation-script.ps1" -OutFile "$scriptDownloadPath\pc-flip-preparation-script.ps1"

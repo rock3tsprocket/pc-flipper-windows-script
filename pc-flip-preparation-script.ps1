@@ -212,7 +212,7 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
 
 function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     # Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
-    # New-Item -Type Directory -Path "Nvidia-Drivers"
+    # New-Item -Type Directory -Path "Nvidia-Drivers" | Out-Null
     # $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
     # $ProgressPreference = 'SilentlyContinue'
     # Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
@@ -237,7 +237,7 @@ function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a locati
 
 function Install-AMDDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     Write-Host "AMD GPU detected. Drivers downloading and installing..."
-    New-Item -ItemType Directory -Path "AMD-Drivers"
+    New-Item -ItemType Directory -Path "AMD-Drivers" | Out-Null
     $amdDrivers = "AMD-Drivers\setup.exe"
     $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
     curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
@@ -249,7 +249,7 @@ function Install-AMDDrivers { # Approved Verb ("Places a resource in a location,
 }
 
 function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    New-Item -Type Directory -Path "chipset"
+    New-Item -Type Directory -Path "chipset" | Out-Null
     if ($cpu -like "*AMD*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_AMD.exe"
         $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
@@ -338,7 +338,7 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
         [string]$DownloadPath = "app-installers"
     )
     
-    New-Item -ItemType Directory -Path $DownloadPath
+    New-Item -ItemType Directory -Path $DownloadPath | Out-Null
     $furmarkInstalled = $false
 
     if ($SelectedApps.redist) {
@@ -511,8 +511,23 @@ function Set-ScriptVariables {
     $script:ramCapacity = if ($gb -eq [math]::Truncate($gb)) { "$([int]$gb) GB" } else { "{0:N2} GB" -f $gb }
 }
 
-function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
+function Install-WinGetFresh {
+    $url = "https://aka.ms/getwinget"
+    $path = "$env:temp\packages"
+    $filePath = "$path\Microsoft.DesktopInstaller.msixbundle"
+    if (-not (Test-Path $path)) {
+        New-Item -ItemType Directory "$path" | Out-Null
+    }
+    Invoke-WebRequest -Uri $url -OutFile $filePath
+    Add-AppxPackage $filePath
+}
 
+function Start-WinGetSourcesFix {
+    winget source remove -n "winget"
+    winget source add -n "winget" -a "https://cdn.winget.microsoft.com/cache"
+}
+
+function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     # NuGet
     try {
         $null = Get-PackageProvider -Name NuGet -ErrorAction Stop -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' }
@@ -536,20 +551,123 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
 
     # WinGet
     try {
-        winget --version | Out-Null
-
+        $wingetVersionOutput = winget --version
         Write-Host "WinGet is already installed." -ForegroundColor Green
+        
+        # Check if version is less than 1.6
+        if ($wingetVersionOutput -match "v(\d+)\.(\d+)") {
+            $majorVersion = [int]$Matches[1]
+            $minorVersion = [int]$Matches[2]
+            
+            if ($majorVersion -lt 1 -or ($majorVersion -eq 1 -and $minorVersion -lt 6)) {
+                Write-Host "WinGet version $wingetVersionOutput is outdated. Installing latest version..." -ForegroundColor Yellow
+                try {
+                    Install-WinGetFresh
+                    Write-Host "WinGet updated successfully." -ForegroundColor Green
+                } catch {
+                    Write-Host "Error updating WinGet: $_" -ForegroundColor Red
+                }
+            } else {
+                Write-Host "WinGet version $wingetVersionOutput is sufficient." -ForegroundColor Green
+            }
+        } else {
+            Write-Host "Could not determine WinGet version from: $wingetVersionOutput" -ForegroundColor Yellow
+        }
     } catch {
         Write-Host "WinGet not installed. Installing WinGet..." -ForegroundColor Yellow
         try { 
-            Repair-WinGetPackageManager -AllUsers *>&1 | Out-Null
-            $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-            if ($userPath -notlike '*\Microsoft\WindowsApps*') { [Environment]::SetEnvironmentVariable('Path', $userPath + ";%LOCALAPPDATA%\Microsoft\WindowsApps", 'User') }
-            Add-AppxPackage -RegisterByFamilyName -MainPackage "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+            # Repair-WinGetPackageManager -AllUsers *>&1 | Out-Null
+            # $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+            # if ($userPath -notlike '*\Microsoft\WindowsApps*') { [Environment]::SetEnvironmentVariable('Path', $userPath + ";%LOCALAPPDATA%\Microsoft\WindowsApps", 'User') }
+            # Add-AppxPackage -RegisterByFamilyName -MainPackage "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+            Install-WinGetFresh
             Write-Host "WinGet installed successfully." -ForegroundColor Green
         } catch { 
             Write-Host "Error installing WinGet: $_" -ForegroundColor Red
         }
+    }
+
+    # Write-Host -ForegroundColor Green "Checking WinGet functionality..."
+    # $wingetError = winget search notepad --source winget 2>&1
+    # if ($LASTEXITCODE -ne 0) {
+    #     if ($wingetError -match "0x8a15000f" -and $wingetError -match "Data required by the source is missing") {
+    #         Write-Host "Known Error Detected! Running fix..."
+    #         Start-WinGetSourcesFix
+    #         Write-Host -ForegroundColor Green "Fix applied. Testing WinGet..."
+    #         $newWingetError = winget search notepad --source winget 2>&1
+    #         if ($LASTEXITCODE -ne 0) {
+    #             if ($newWingetError -match "0x8a15000f" -and $newWingetError -match "Data required by the source is missing") {
+    #                 Write-Host "Error detected again. Applying other fix..."
+    #                 Install-WinGetFresh
+    #                 Write-Host -ForegroundColor Green "Fix applied. Testing WinGet..."
+    #                 $newestWingetError = winget search notepad --source winget 2>&1
+    #                 if ($LASTEXITCODE -ne 0) {
+    #                     if ($newestWingetError -match "0x8a15000f" -and $newestWingetError -match "Data required by the source is missing") {
+    #                         Write-Host -ForegroundColor Red "Error was unable to be fixed. Apps may not install properly."
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
+    # Helper function to test WinGet and return error information
+    function Test-WinGet {
+        $wingetError = winget search notepad --source winget 2>&1
+        $isSuccess = $LASTEXITCODE -eq 0
+        $isWingetSourceBug = ($wingetError -match "0x8a15000f" -and $wingetError -match "Data required by the source is missing")
+        
+        return @{
+            Success = $isSuccess
+            WingetSourceBug = $isWingetSourceBug
+            ErrorMessage = $wingetError
+        }
+    }
+
+    Write-Host -ForegroundColor Green "Checking WinGet functionality..."
+    $testResult = Test-WinGet
+
+    # WinGet working normally - exit early
+    if ($testResult.Success) {
+        Write-Host -ForegroundColor Green "WinGet is functioning correctly."
+        return
+    }
+
+    # Check for the specific error we know how to fix
+    if ($testResult.WingetSourceBug) {
+        Write-Host "Known Error Detected! Running first fix..."
+        Start-WinGetSourcesFix
+        Write-Host -ForegroundColor Green "Fix applied. Testing WinGet..."
+        
+        $testResult = Test-WinGet
+        if ($testResult.Success) {
+            Write-Host -ForegroundColor Green "Fix was successful!"
+            return
+        }
+        
+        # If first fix failed, try the second fix
+        if ($testResult.WingetSourceBug) {
+            Write-Host "Error detected again. Applying alternative fix..."
+            Install-WinGetFresh
+            Write-Host -ForegroundColor Green "Alternative fix applied. Testing WinGet..."
+            
+            $testResult = Test-WinGet
+            if ($testResult.Success) {
+                Write-Host -ForegroundColor Green "Alternative fix was successful!"
+                return
+            }
+            
+            # If second fix also failed
+            if ($testResult.WingetSourceBug) {
+                Write-Host -ForegroundColor Red "All repair attempts failed. Apps may not install properly."
+                return
+            }
+        }
+        
+        Write-Host -ForegroundColor Red "Unexpected error after repair attempt: $($testResult.ErrorMessage)"
+        return
+    } else {
+        Write-Host -ForegroundColor Red "Unknown WinGet error occurred: $($testResult.ErrorMessage)"
     }
 }
 

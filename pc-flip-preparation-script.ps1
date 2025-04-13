@@ -59,9 +59,6 @@ function Get-UserChoice { # Approved Verb ("Specifies an action that retrieves a
     # Validate that there's an action for each key
     foreach ($key in $keys) {
         $actionKey = "choiceIs$key"
-        # if (-not $choiceActions.ContainsKey($actionKey)) {
-        #     Write-Warning "No action defined for key '$key'. This key will have no action."
-        # }
     }
     
     # Check if "Default" is defined as a key
@@ -561,6 +558,7 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
             
             if ($majorVersion -lt 1 -or ($majorVersion -eq 1 -and $minorVersion -lt 6)) {
                 Write-Host "WinGet version $wingetVersionOutput is outdated. Installing latest version..." -ForegroundColor Yellow
+                Write-Host "This can take a while. Please be patient." -ForegroundColor DarkCyan
                 try {
                     Install-WinGetFresh
                     Write-Host "WinGet updated successfully." -ForegroundColor Green
@@ -587,30 +585,6 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
         }
     }
 
-    # Write-Host -ForegroundColor Green "Checking WinGet functionality..."
-    # $wingetError = winget search notepad --source winget 2>&1
-    # if ($LASTEXITCODE -ne 0) {
-    #     if ($wingetError -match "0x8a15000f" -and $wingetError -match "Data required by the source is missing") {
-    #         Write-Host "Known Error Detected! Running fix..."
-    #         Start-WinGetSourcesFix
-    #         Write-Host -ForegroundColor Green "Fix applied. Testing WinGet..."
-    #         $newWingetError = winget search notepad --source winget 2>&1
-    #         if ($LASTEXITCODE -ne 0) {
-    #             if ($newWingetError -match "0x8a15000f" -and $newWingetError -match "Data required by the source is missing") {
-    #                 Write-Host "Error detected again. Applying other fix..."
-    #                 Install-WinGetFresh
-    #                 Write-Host -ForegroundColor Green "Fix applied. Testing WinGet..."
-    #                 $newestWingetError = winget search notepad --source winget 2>&1
-    #                 if ($LASTEXITCODE -ne 0) {
-    #                     if ($newestWingetError -match "0x8a15000f" -and $newestWingetError -match "Data required by the source is missing") {
-    #                         Write-Host -ForegroundColor Red "Error was unable to be fixed. Apps may not install properly."
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     }
-    # }
-
     # Helper function to test WinGet and return error information
     function Test-WinGet {
         $wingetError = winget search notepad --source winget 2>&1
@@ -624,7 +598,7 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
         }
     }
 
-    Write-Host -ForegroundColor Green "Checking WinGet functionality..."
+    Write-Host "Checking WinGet functionality..."
     $testResult = Test-WinGet
 
     # WinGet working normally - exit early
@@ -684,7 +658,14 @@ function Test-AdminPrivileges { # Approved Verb ("Verifies the operation or cons
         Write-Host -ForegroundColor Red "Failure: Current permissions inadequate: Script not running as administrator."
         Write-Host -ForegroundColor Red "============================================================================="
         Get-UserChoice -readHostMessage "[R] Relaunch as administrator [E] Exit" -choicePrompt "Please select an action:" -keys "R", "E" -choiceActions @{
-            choiceIsR = { Start-Process -Verb RunAs -FilePath "powershell.exe" -ArgumentList "-Command", "Invoke-RestMethod -Uri 'https://bit.ly/pcflipperwindowsscript' | Invoke-Expression" }
+            choiceIsR = { 
+                Start-Process `
+                -Verb RunAs `
+                -FilePath "powershell.exe" `
+                -ArgumentList "-Command", "Invoke-RestMethod -Uri 'https://bit.ly/pcflipperwindowsscript' | Invoke-Expression"
+                
+                exit
+            }
             choiceIsE = { exit }
         }
     }
@@ -1177,36 +1158,23 @@ function Invoke-SelectedScriptTasks {
     }
 
     if ($Tasks.RunAppInstaller) {
-        $selectedApps = @{
-            redist = $Tasks.redist
-            dotnet = $Tasks.dotnet
-            Firefox = $Tasks.Firefox
-            Chrome = $Tasks.Chrome
-            Steam = $Tasks.Steam
-            Discord = $Tasks.Discord
-            EpicGamesLauncher = $Tasks.EpicGamesLauncher
-            OpenRGB = $Tasks.OpenRGB
-            SignalRGB = $Tasks.SignalRGB
-            VLC = $Tasks.VLC
-            SevenZip = $Tasks.SevenZip
-            Malwarebytes = $Tasks.Malwarebytes
-            HWMonitor = $Tasks.HWMonitor
-            MSIAfterburner = $Tasks.MSIAfterburner
-            FurMark = $Tasks.FurMark
-            OCCT = $Tasks.OCCT
-            Cinebench = $Tasks.Cinebench
-            CrystalDiskMark = $Tasks.CrystalDiskMark
-            CrystalDiskInfo = $Tasks.CrystalDiskInfo
-            aida64 = $Tasks.aida64
-            fancontrol = $Tasks.fancontrol
-            cpuz = $Tasks.cpuz
-            gpuz = $Tasks.gpuz
-            heaven = $Tasks.heaven
-            valley = $Tasks.valley
-            superposition = $Tasks.superposition
-            revo = $Tasks.revo
+        $selectedApps = @{}
+
+        $apps = @(
+            'redist', 'dotnet', 'Firefox', 'Chrome', 'Steam', 'Discord', 
+            'EpicGamesLauncher', 'OpenRGB', 'SignalRGB', 'VLC', 'SevenZip',
+            'Malwarebytes', 'HWMonitor', 'MSIAfterburner', 'FurMark', 'OCCT',
+            'Cinebench', 'CrystalDiskMark', 'CrystalDiskInfo', 'aida64', 'fancontrol', 
+            'cpuz', 'gpuz', 'heaven', 'valley', 'superposition', 'revo'
+        )
+
+        foreach ($app in $apps) {
+            if ($null -ne $Tasks.$app) {
+                $selectedApps[$app] = $Tasks.$app
+            }
         }
-        Install-SelectedApps -SelectedApps $selectedApps
+
+        Install-SelectedApps -SelectedApps $selectedApps 
     }
 
     if ($Tasks.RunFurmarkTest -and $Tasks.FurmarkInstalled) {
@@ -1225,28 +1193,54 @@ function Start-WindowsActivation {
         [bool]$UseKey,
         [string]$ProductKey
     )
-    
-    if ($UseMassgrave) {
-        Write-Host -ForegroundColor Green "Starting Massgrave script..."
-        if ($PSScriptRoot) {
-            $maspath = Join-Path -Path $PSScriptRoot -ChildPath "\mas\hwid.cmd"
-            Start-Process -Verb runAs -FilePath "cmd.exe" -ArgumentList "/c", "`"$maspath`""
-        } else {
+
+    function Start-MassgraveScript {
+        if (-not $PSScriptRoot) {
             Write-Host -ForegroundColor Red "Error: variable `$PSScriptRoot does not exist. Massgrave not started."
+            return
         }
-    } elseif ($UseKey) {
+        # Download massgrave script
+        # this code does the following:
+        # Converts line endings from LF to CRLF if it has LF endings
+        # Also saves the file as UTF-8 without BOM
+        Write-Host "Downloading Massgrave script..."
+        New-Item -Type Directory -Path "bin\mas" | Out-Null
+        $masUrl = "https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/refs/heads/master/MAS/Separate-Files-Version/Activators/HWID_Activation.cmd"
+        $masOutFilePath = Join-Path -Path $PSScriptRoot -ChildPath "\mas\hwid.cmd"
+        $lfcontent = (Invoke-WebRequest -UseBasicParsing -Uri $masUrl).Content
+        $crlfContent = $lfcontent -replace "`r?`n", "`r`n"
+        $utf8nobom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($masOutFilePath, $crlfContent, $utf8nobom)
+
+        Write-Host "Starting Massgrave script..."
+        Start-Process -Verb runAs -FilePath "cmd.exe" -ArgumentList "/c", "`"$masOutFilePath`"", "/HWID"
+    }
+
+    function Start-WindowsActivationProcessWithKey {
+        param (
+            [string]$ProductKey
+        )
+
         if (-not [string]::IsNullOrWhiteSpace($ProductKey)) {
             Write-Host "Activating Windows using product key..."
             try {
+                # Get Service
                 $service = Get-CimInstance -ClassName "SoftwareLicensingService"
+
+                # Get Product
                 $splat = @{
                     ClassName = 'SoftwareLicensingProduct'
                     Filter = "ApplicationId='55c92734-d682-4d71-983e-d6ec3f16059f' AND PartialProductKey IS NOT NULL"
                 }
                 $product = Get-CimInstance @splat
 
+                # Install Product Key
                 $service | Invoke-CimMethod -MethodName InstallProductKey -Arguments @{ ProductKey = $ProductKey } | Out-Null
+                
+                # Activate with product key
                 $product | Invoke-CimMethod -MethodName Activate | Out-Null
+                
+                # Refresh license status
                 $service | Invoke-CimMethod -MethodName RefreshLicenseStatus | Out-Null
 
                 Write-Host -ForegroundColor Green "Success! Windows is activated."
@@ -1256,6 +1250,12 @@ function Start-WindowsActivation {
         } else {
             Write-Host -ForegroundColor Yellow "No product key was entered, skipping activation..."
         }
+    }
+    
+    if ($UseMassgrave) {
+        Start-MassgraveScript
+    } elseif ($UseKey) {
+        Start-WindowsActivationProcessWithKey -ProductKey $ProductKey
     }
 }
 
@@ -1308,7 +1308,7 @@ Test-Internet
 Write-Host -ForegroundColor Green "Success"
 
 # Install prerequisites and import modules
-Write-Host "Installing prerequisites..."
+Write-Host -ForegroundColor DarkCyan "Installing prerequisites..."
 Install-Prerequisites
 Import-Module -Name "AnyBox"
 Import-Module -Name "Microsoft.WinGet.Client"

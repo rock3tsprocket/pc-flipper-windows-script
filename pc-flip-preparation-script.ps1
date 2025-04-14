@@ -293,37 +293,44 @@ function Show-MotherboardDriverPage { # Approved Verb ("Makes a resource visible
     Start-Process $searchUrl
 }
 
+# I plan on converting this to use New-Item and New-ItemProperty soon :)
 function Start-WindowsTweaks { # Approved Verb ("Initiates an operation")
-	
  	Write-Host "--- Windows Tweaks ---"
 	
 	Write-Host "Disabling Location Services..."
-	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v "Value" /t REG_SZ /d "Deny" /f > $null
+	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v "Value" /t REG_SZ /d "Deny" /f | Out-Null
 	
 	Write-Host "Disabling Windows Error Reporting..."
-	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d "1" /f > $null
+	reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d "1" /f | Out-Null
 	
 	Write-Host "Enabling Long File Paths..."
-	reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v "LongPathsEnabled" /t REG_DWORD /d "1" /f > $null
-	
-    Write-Host "Disabling Search Box Suggestions in start menu..."
-	reg.exe add "HKCU\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v "DisableSearchBoxSuggestions" /t REG_DWORD /d "1" /f > $null
+	reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v "LongPathsEnabled" /t REG_DWORD /d "1" /f | Out-Null
 
-	Write-Host "Enabling Dark Mode..."
-	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f > $null
-	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v ColorPrevalence /t REG_DWORD /d 0 /f > $null
-	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v EnableTransparency /t REG_DWORD /d 1 /f > $null
-	reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f > $null
-	
-	Write-Host "Disabling Sticky Keys..."
-	reg.exe add "HKCU\Control Panel\Accessibility\StickyKeys" /v "Flags" /t REG_SZ /d "0" /f
-	
-	# Check if the OS is Windows 11
-	if ($windowsOSVersion -like "*Windows 11*") {
-		Write-Host "Windows 11 detected! Aligning taskbar to the left..."
-		reg.exe add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAl" /t REG_DWORD /d "0" /f > $null
-	}
-	
+    Write-Host "Disabling WiFi-Sense..."
+    reg.exe add "HKLM\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" /v "AutoConnectAllowedOEM" /t REG_DWORD /d "0" /f | Out-Null
+
+    Write-Host "Disabling Location Services..."
+    reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v "Value" /t REG_SZ /d "Deny" /f | Out-Null
+
+    Write-Host "Disabling Windows Error Reporting..."
+    reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d "1" /f | Out-Null
+
+    Write-Host "Enabling Long File Paths..."
+    reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v "LongPathsEnabled" /t REG_DWORD /d "1" /f | Out-Null
+
+    Write-Host "Enabling Verbose Mode..."
+    reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "VerboseStatus" /t REG_DWORD /d "1" /f | Out-Null
+
+    Write-Host "Disabling Cortana..."
+    reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /t REG_DWORD /d "0" /f | Out-Null
+
+    Write-Host "Disabling Telemetry..."
+    reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d "0" /f | Out-Null
+    reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "DoNotShowFeedbackNotifications" /t REG_DWORD /d "0" /f | Out-Null
+    reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d "0" /f | Out-Null
+
+    Write-Host "Disabling Advertising ID..."
+    reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo" /v "DisabledByGroupPolicy" /t REG_DWORD /d "1" /f | Out-Null
 	
 	Write-Host -ForegroundColor Green "Windows tweaks complete."
 }
@@ -461,28 +468,6 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
 
     return $furmarkInstalled
-}
-
-function New-SpecSheet {
-$html = @"
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Spec Sheet</title>
-    </head>
-    <body>
-        <h1>CPU:</h1>
-    </body>
-    </html>
-"@
-
-    New-Item -ItemType Directory -Path $folderName | Out-Null
-    $folderName = "specsheet"
-    $filePath = "$folderName\index.html"
-    [System.IO.File]::WriteAllText($filePath, $html, [System.Text.Encoding]::UTF8)
-    Start-Process $filePath
 }
 
 function Set-ScriptVariables {
@@ -664,6 +649,7 @@ function Test-AdminPrivileges { # Approved Verb ("Verifies the operation or cons
                 -FilePath "powershell.exe" `
                 -ArgumentList "-Command", "Invoke-RestMethod -Uri 'https://bit.ly/pcflipperwindowsscript' | Invoke-Expression"
                 
+                Stop-Transcript
                 exit
             }
             choiceIsE = { exit }
@@ -818,8 +804,8 @@ function Show-ScriptOptionsWindow {
                         
                         <TextBlock Text="System Configuration" FontWeight="Bold" Margin='0,0,0,8' />
                         
-                        <CheckBox Name="RunWindowsTweaks" Content="Run Windows Tweaks" IsChecked="True" />
-                        <TextBlock Text="Applies basic Windows tweaks like enabling Dark Mode or changing taskbar alignment" Margin="25,0,0,15" TextWrapping="Wrap" Opacity="0.7" />
+                        <CheckBox Name="RunWindowsTweaks" Content="Tweak Windows" IsChecked="False" />
+                        <TextBlock Text="Applies basic Windows tweaks such as disabling location services or disabling telemetry" Margin="25,0,0,15" TextWrapping="Wrap" Opacity="0.7" />
                         
                         <CheckBox Name="ActivateWindows" Content="Activate Windows" IsChecked="False" />
                         <TextBlock Text="Activate your Windows installation" Margin="25,0,0,5" TextWrapping="Wrap" Opacity="0.7" />
@@ -1308,7 +1294,7 @@ Test-Internet
 Write-Host -ForegroundColor Green "Success"
 
 # Install prerequisites and import modules
-Write-Host -ForegroundColor DarkCyan "Installing prerequisites..."
+Write-Host "Installing prerequisites..."
 Install-Prerequisites
 Import-Module -Name "AnyBox"
 Import-Module -Name "Microsoft.WinGet.Client"

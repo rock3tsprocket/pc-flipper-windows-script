@@ -221,7 +221,7 @@ function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a locati
 
     $nvcleanstallPath = "$env:ProgramFiles\NVCleanstall\NVCleanstall.exe"
     Write-Host "Nvidia GPU detected, installing NVCleanstall..."
-    winget install --id TechPowerUp.NVCleanstall @wingetArgs
+    winget install --id "TechPowerUp.NVCleanstall" @wingetArgs
     Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
     if (Test-Path -Path "$nvcleanstallPath") {
         Start-Process -Path "$nvcleanstallPath" -Wait
@@ -433,9 +433,7 @@ function Install-SelectedApps { # Approved Verb ("Places a resource in a locatio
     }
     if ($SelectedApps.fancontrol) {
         Write-Host "Installing FanControl..."
-
         if (Test-DotNet8Support) { $dotnetVersion = "8_0" } else { $dotnetVersion = "4_8" }
-        
         $api = "https://api.github.com/repos/Rem0o/FanControl.Releases/releases/latest"
         $uri = $(Invoke-RestMethod $api).assets.browser_download_url | Where-Object {$_.EndsWith("8_0_Installer.exe")}
         $outfile = "$DownloadPath\fancontrol_dotnet$dotnetVersion.exe"

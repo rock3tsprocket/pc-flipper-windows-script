@@ -173,14 +173,65 @@ function Start-FurmarkTest { # Approved Verb ("Initiates an operation")
 }
 
 function Install-GPUDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    if ($gpu -like "*NVIDIA*" -or $gpu -like "*GeForce*") {
+    function Install-NvidiaDrivers {
+        # Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
+        # New-Item -Type Directory -Path "Nvidia-Drivers" | Out-Null
+        # $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
+        # $ProgressPreference = 'SilentlyContinue'
+        # Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
+        # if (Test-Path -Path "$nvidiaDrivers") {
+        #     Start-Process $nvidiaDrivers
+        # } else {
+        #     Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
+        # }
+
+        $nvcleanstallPath = "$env:ProgramFiles\NVCleanstall\NVCleanstall.exe"
+        Write-Host "Nvidia GPU detected, installing NVCleanstall..."
+        winget install --id "TechPowerUp.NVCleanstall" @wingetArgs
+        Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
+        if (Test-Path -Path "$nvcleanstallPath") {
+            Start-Process -Path "$nvcleanstallPath" -Wait
+            $msgBoxText = 'In the GUI that just opened, select the proper driver and install it.'
+            [System.Windows.MessageBox]::Show("$msgBoxText", "Nvidia Drivers", "Ok", "Information")
+        } else {
+            Write-Host -ForegroundColor Red "Error: NVCleanstall not found at $nvcleanstallPath. Please install drivers manually."
+        }
+    }
+
+    function Install-AMDDrivers {
+        Write-Host "AMD GPU detected. Drivers downloading and installing..."
+        New-Item -ItemType Directory -Path "AMD-Drivers" | Out-Null
+        $amdDrivers = "AMD-Drivers\setup.exe"
+        $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
+        curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
+        if (Test-Path -Path "$amdDrivers") {
+            Start-Process $amdDrivers -Wait
+        } else {
+            Write-Host -ForegroundColor Red "Error: AMD driver installer not found at $amdDrivers."
+        }
+    }    
+
+    function Install-IntelDrivers {
+        Write-Host "Intel Arc GPU detected. Drivers downloading and installing..."
+        New-Item -ItemType Directory -Path "Intel-Arc-Drivers" | Out-Null
+        $intelDrivers = "Intel-Arc-Drivers\setup.exe"
+        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Intel-Arc-GPU-Drivers/refs/heads/main/configs/link.txt")
+        Invoke-WebRequest -Uri $downloadLink -OutFile $intelDrivers
+        if (Test-Path -Path "$intelDrivers") {
+            Start-Process $intelDrivers -Wait
+        } else {
+            Write-Host -ForegroundColor Red "Error: Intel Arc driver installer not found at $intelDrivers."
+        }
+    }
+
+
+
+    if (($gpu -like "*NVIDIA*") -or ($gpu -like "*GeForce*")) {
         Install-NvidiaDrivers
-    } elseif ($gpu -like "*AMD*" -or $gpu -like "*Radeon*") {
+    } elseif (($gpu -like "*AMD*") -or ($gpu -like "*Radeon*")) {
         Install-AMDDrivers
-    } elseif ($gpu -like "*Intel*") {
-        
-        Write-Host "Intel GPU detected. Please download manually, this script doesn't currently support Intel iGPUs and Intel Arc GPUs."
-        Read-Host "Press ENTER to skip the GPU driver part of this script."
+    } elseif (($gpu -like "*Intel*") -and ($gpu -like "*Arc*")) {
+        Install-IntelDrivers
     } else {
         $anybox = New-Object AnyBox.AnyBox
 		
@@ -189,6 +240,7 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
         $anybox.Buttons = @(
             New-AnyBoxButton -Name 'amd' -Text 'AMD'
             New-AnyBoxButton -Name 'nvidia' -Text 'Nvidia'
+            New-AnyBoxButton -Name 'intelarc' -Text 'Intel Arc'
             New-AnyBoxButton -Name 'other' -Text 'Other'
         )
 
@@ -196,60 +248,26 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
         $response = $anybox | Show-AnyBox
 
         # Act on responses.
-        if ($response['amd'] -eq $true) {
+        if ($response['amd']) {
             Install-AMDDrivers
-        } elseif ($response['nvidia'] -eq $true) {
+        } elseif ($response['nvidia']) {
             Install-NvidiaDrivers
-        } elseif ($response['other'] -eq $true) {
-            Write-Host "You selected other, which means your GPU is not from AMD or Nvidia and it is currently unsupported. Please download drivers manually."
-            Read-Host "Press any key to continue"
+        } elseif ($response['intelarc']) {
+            Install-IntelDrivers
+        } elseif ($response['other']) {
+            Write-Host "You selected other, which means your GPU is currently unsupported. Please download drivers manually."
+            Start-Sleep -Seconds 3
         }
     }
 }
 
-function Install-NvidiaDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    # Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
-    # New-Item -Type Directory -Path "Nvidia-Drivers" | Out-Null
-    # $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
-    # $ProgressPreference = 'SilentlyContinue'
-    # Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
-    # if (Test-Path -Path "$nvidiaDrivers") {
-    #     Start-Process $nvidiaDrivers
-    # } else {
-    #     Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
-    # }
 
-    $nvcleanstallPath = "$env:ProgramFiles\NVCleanstall\NVCleanstall.exe"
-    Write-Host "Nvidia GPU detected, installing NVCleanstall..."
-    winget install --id "TechPowerUp.NVCleanstall" @wingetArgs
-    Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
-    if (Test-Path -Path "$nvcleanstallPath") {
-        Start-Process -Path "$nvcleanstallPath" -Wait
-        $msgBoxText = 'In the GUI that just opened, select the proper driver and install it.'
-        [System.Windows.MessageBox]::Show("$msgBoxText", "Nvidia Drivers", "Ok", "Information")
-    } else {
-        Write-Host -ForegroundColor Red "Error: NVCleanstall not found at $nvcleanstallPath. Please install drivers manually."
-    }
-}
-
-function Install-AMDDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    Write-Host "AMD GPU detected. Drivers downloading and installing..."
-    New-Item -ItemType Directory -Path "AMD-Drivers" | Out-Null
-    $amdDrivers = "AMD-Drivers\setup.exe"
-    $adrenalinDriverLink = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/nunodxxd/AMD-Software-Adrenalin/refs/heads/main/configs/config.json" | Select-Object -ExpandProperty driver_links | Select-Object -ExpandProperty stable
-    curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $adrenalinDriverLink -o $amdDrivers
-    if (Test-Path -Path "$amdDrivers") {
-        Start-Process $amdDrivers -Wait
-    } else {
-        Write-Host -ForegroundColor Red "Error: AMD driver installer not found at $amdDrivers."
-    }
-}
 
 function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     New-Item -Type Directory -Path "chipset" | Out-Null
     if ($cpu -like "*AMD*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_AMD.exe"
-        $chipsetDriverLink = (curl.exe "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
+        $chipsetDriverLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
         curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "AMD chipset drivers successfully downloaded."
         Write-Host "Installing drivers..."

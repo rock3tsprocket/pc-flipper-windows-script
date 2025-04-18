@@ -174,27 +174,15 @@ function Start-FurmarkTest { # Approved Verb ("Initiates an operation")
 
 function Install-GPUDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     function Install-NvidiaDrivers {
-        # Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
-        # New-Item -Type Directory -Path "Nvidia-Drivers" | Out-Null
-        # $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
-        # $ProgressPreference = 'SilentlyContinue'
-        # Invoke-WebRequest -Uri "https://us.download.nvidia.com/nvapp/client/11.0.3.218/NVIDIA_app_v11.0.3.218.exe" -OutFile "$nvidiaDrivers"
-        # if (Test-Path -Path "$nvidiaDrivers") {
-        #     Start-Process $nvidiaDrivers
-        # } else {
-        #     Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
-        # }
-
-        $nvcleanstallPath = "$env:ProgramFiles\NVCleanstall\NVCleanstall.exe"
-        Write-Host "Nvidia GPU detected, installing NVCleanstall..."
-        winget install --id "TechPowerUp.NVCleanstall" @wingetArgs
-        Write-Host -ForegroundColor Green "NVCleanstall installed. Running app..."
-        if (Test-Path -Path "$nvcleanstallPath") {
-            Start-Process -Path "$nvcleanstallPath" -Wait
-            $msgBoxText = 'In the GUI that just opened, select the proper driver and install it.'
-            [System.Windows.MessageBox]::Show("$msgBoxText", "Nvidia Drivers", "Ok", "Information")
+        Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
+        New-Item -ItemType Directory -Path "Nvidia-Drivers" | Out-Null
+        $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
+        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Nvidia-GPU-Drivers/refs/heads/main/configs/link.txt")
+        Invoke-WebRequest -Uri $downloadLink -OutFile $nvidiaDrivers
+        if (Test-Path -Path "$nvidiaDrivers") {
+            Start-Process $nvidiaDrivers -Wait
         } else {
-            Write-Host -ForegroundColor Red "Error: NVCleanstall not found at $nvcleanstallPath. Please install drivers manually."
+            Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
         }
     }
 
@@ -260,8 +248,6 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
         }
     }
 }
-
-
 
 function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     New-Item -Type Directory -Path "chipset" | Out-Null

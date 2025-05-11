@@ -1201,7 +1201,8 @@ function Start-WindowsActivation {
         [System.IO.File]::WriteAllText($masOutFilePath, $crlfContent, $utf8nobom)
 
         Write-Host "Starting Massgrave script..."
-        Start-Process -Verb runAs -FilePath "cmd.exe" -ArgumentList "/c", "`"$masOutFilePath`"", "/HWID"
+        # Start-Process -Verb runAs -FilePath "cmd.exe" -ArgumentList "/c", "`"$masOutFilePath`"", "/HWID"
+        Start-Process -Verb runAs -FilePath "cmd.exe" -ArgumentList "/k", "`"$masOutFilePath`"", "/HWID"
     }
 
     function Start-WindowsActivationProcessWithKey {

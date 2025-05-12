@@ -7,8 +7,10 @@ Even if you're not a PC flipper you can still use it for your own computer to in
 # Execution
 
 1. Type "PowerShell" into the Start Menu.
-2. Find the result that says "Windows PowerShell" (or PowerShell 7 if you have it), right-click it, and select "Run as administrator". 
-3. Paste in the following oneliner command: `irm bit.ly/pcflipperwindowsscript | iex`
+2. Find the result that says "Windows PowerShell" or similar, right-click it, and select "Run as administrator". 
+3. Execute the oneliner command: `irm bit.ly/pcflipperwindowsscript | iex`  
+
+**Having issues with the command?** Open PowerShell as administrator and try this command: `powershell.exe -ExecutionPolicy Bypass -Command "irm https://bit.ly/pcflipperwindowsscript | iex" `
 
 This will run the script. Prerequisites may need to be installed at the beginning of script execution, so please be patient while you wait for the script to start. 
 

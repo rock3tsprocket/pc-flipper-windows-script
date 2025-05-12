@@ -515,19 +515,6 @@ function Start-WinGetSourcesFix {
 }
 
 function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
-    # cURL
-    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-        Write-Host "cURL is already installed." -ForegroundColor Green
-    } else {
-        Write-Host "cURL is not installed. Installing..." -ForegroundColor Yellow
-        try {
-            winget install --id "cURL.cURL" @wingetArgs
-            Write-Host "cURL installed successfully." -ForegroundColor Green
-        } catch {
-            Write-Host "Error installing cURL: $_" -ForegroundColor Red
-        }
-    }
-
     # NuGet
     try {
         $null = Get-PackageProvider -Name NuGet -ErrorAction Stop -ListAvailable | Where-Object { [version]$_.Version -ge [version]'2.8.5.201' }
@@ -645,6 +632,19 @@ function Install-Prerequisites { # Approved Verb ("Places a resource in a locati
         return
     } else {
         Write-Host -ForegroundColor Red "Unknown WinGet error occurred: $($testResult.ErrorMessage)"
+    }
+
+    # cURL
+    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+        Write-Host "cURL is already installed." -ForegroundColor Green
+    } else {
+        Write-Host "cURL is not installed. Installing..." -ForegroundColor Yellow
+        try {
+            winget install --id "cURL.cURL" @wingetArgs
+            Write-Host "cURL installed successfully." -ForegroundColor Green
+        } catch {
+            Write-Host "Error installing cURL: $_" -ForegroundColor Red
+        }
     }
 }
 

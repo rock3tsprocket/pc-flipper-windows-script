@@ -514,9 +514,9 @@ function Start-WinGetSourcesFix {
 function Install-Prerequisites { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     # cURL
     if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-        Write-Output "cURL is already installed." -ForegroundColor Green
+        Write-Host "cURL is already installed." -ForegroundColor Green
     } else {
-        Write-Output "cURL is not installed. Installing..." -ForegroundColor Yellow
+        Write-Host "cURL is not installed. Installing..." -ForegroundColor Yellow
         try {
             winget install --id "cURL.cURL" @wingetArgs
             Write-Host "cURL installed successfully." -ForegroundColor Green

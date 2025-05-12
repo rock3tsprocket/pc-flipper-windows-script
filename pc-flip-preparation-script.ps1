@@ -480,7 +480,10 @@ function Set-ScriptVariables {
         "--silent"
     )
 
-    $script:windowsOSVersion = (systeminfo | findstr /B /C:"OS Name")
+    $script:systemInfo = systeminfo.exe 2>&1
+
+    # $script:windowsOSVersion = ($systemInfo | findstr /B /C:"OS Name")
+    $script:windowsOSVersion = ($systemInfo | Select-String '^OS Name').ToString()
     $script:64BitOperatingSystem = [System.Environment]::Is64BitOperatingSystem
 
     $script:Board = (Get-CimInstance Win32_BaseBoard -Property Product).Product

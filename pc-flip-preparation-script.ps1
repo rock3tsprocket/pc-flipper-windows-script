@@ -15,11 +15,6 @@ function Remove-IfExists { # Approved Verb ("Deletes a resource from a container
     }
 }
 
-function Clear-ScrollDown {
-    $emptyLines = [string]::new("`n", [console]::WindowHeight)
-    Write-Host $emptyLines
-}
-
 function Install-PSModule { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     param (
         [string]$moduleName,        
@@ -37,12 +32,13 @@ function Install-PSModule { # Approved Verb ("Places a resource in a location, a
 }
 
 function Start-Logging {
-    if (-not (Test-Path "logs")) {
-        New-Item -Path "logs" -ItemType Directory | Out-Null
+    $logsPath = "$env:temp\pc-flipper-windows-script-logs"
+    if (-not (Test-Path $logsPath)) {
+        New-Item -Path "$logsPath" -ItemType Directory | Out-Null
     }
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
     $fileName = "transcript_$timestamp.log"
-    Start-Transcript -Path "logs\$fileName"
+    Start-Transcript -Path "$logsPath\$fileName"
 }
 
 function Get-UserChoice { # Approved Verb ("Specifies an action that retrieves a resource")
@@ -177,7 +173,7 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
         Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
         New-Item -ItemType Directory -Path "Nvidia-Drivers" | Out-Null
         $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
-        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Nvidia-GPU-Drivers/refs/heads/main/configs/link.txt")
+        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Nvidia-GPU-Drivers/refs/heads/main/configs/link.txt").Trim()
         Invoke-WebRequest -Uri $downloadLink -OutFile $nvidiaDrivers
         if (Test-Path -Path "$nvidiaDrivers") {
             Start-Process $nvidiaDrivers -Wait
@@ -203,7 +199,7 @@ function Install-GPUDrivers { # Approved Verb ("Places a resource in a location,
         Write-Host "Intel Arc GPU detected. Drivers downloading and installing..."
         New-Item -ItemType Directory -Path "Intel-Arc-Drivers" | Out-Null
         $intelDrivers = "Intel-Arc-Drivers\setup.exe"
-        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Intel-Arc-GPU-Drivers/refs/heads/main/configs/link.txt")
+        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Intel-Arc-GPU-Drivers/refs/heads/main/configs/link.txt").Trim()
         Invoke-WebRequest -Uri $downloadLink -OutFile $intelDrivers
         if (Test-Path -Path "$intelDrivers") {
             Start-Process $intelDrivers -Wait
@@ -253,8 +249,8 @@ function Install-ChipsetDrivers { # Approved Verb ("Places a resource in a locat
     New-Item -Type Directory -Path "chipset" | Out-Null
     if ($cpu -like "*AMD*") {
         $chipsetDriverPath = "chipset\ChipsetDrivers_AMD.exe"
-        $chipsetDriverLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt")
-        curl.exe -e "https://www.amd.com/en/support/download/drivers.html" $chipsetDriverLink -o "$chipsetDriverPath"
+        $chipsetDriverLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt").Trim()
+        curl.exe -e "https://www.amd.com/en/support/download/drivers.html" "$chipsetDriverLink" -o "$chipsetDriverPath"
         Write-Host -ForegroundColor Green "AMD chipset drivers successfully downloaded."
         Write-Host "Installing drivers..."
         Start-Process "$chipsetDriverPath" -Wait
@@ -500,7 +496,7 @@ function Set-ScriptVariables {
 
 function Install-WinGetFresh {
     $url = "https://aka.ms/getwinget"
-    $path = "$env:temp\packages"
+    $path = "packages"
     $filePath = "$path\Microsoft.DesktopInstaller.msixbundle"
     if (-not (Test-Path $path)) {
         New-Item -ItemType Directory "$path" | Out-Null
@@ -1199,18 +1195,20 @@ function Start-WindowsActivation {
     )
 
     function Start-MassgraveScript {
-        if (-not $PSScriptRoot) {
-            Write-Host -ForegroundColor Red "Error: variable `$PSScriptRoot does not exist. Massgrave not started."
-            return
-        }
-        # Download massgrave script
-        # this code does the following:
-        # Converts line endings from LF to CRLF if it has LF endings
-        # Also saves the file as UTF-8 without BOM
+        <# 
+            The following code: 
+            Downloads the Massgrave activation script
+            Converts line endings from LF to CRLF (if it has LF endings)
+            Saves the file as UTF-8 without BOM
+        #>
         Write-Host "Downloading Massgrave script..."
-        New-Item -Type Directory -Path "bin\mas" | Out-Null
+        # The script saves to UserProfile instead of Temp folder so the script doesn't throw an error about it running in the wrong location
+        $masParentDir = "$env:UserProfile\MAS"
+        if (-not (Test-Path "$masParentDir")) {
+            New-Item -Type Directory -Path "$masParentDir" | Out-Null
+        }
         $masUrl = "https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/refs/heads/master/MAS/Separate-Files-Version/Activators/HWID_Activation.cmd"
-        $masOutFilePath = Join-Path -Path $PSScriptRoot -ChildPath "\mas\hwid.cmd"
+        $masOutFilePath = "$masParentDir\hwid.cmd"
         $lfcontent = (Invoke-WebRequest -UseBasicParsing -Uri $masUrl).Content
         $crlfContent = $lfcontent -replace "`r?`n", "`r`n"
         $utf8nobom = New-Object System.Text.UTF8Encoding($false)

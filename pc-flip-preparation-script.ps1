@@ -170,16 +170,17 @@ function Start-FurmarkTest { # Approved Verb ("Initiates an operation")
 
 function Install-GPUDrivers { # Approved Verb ("Places a resource in a location, and optionally initializes it")
     function Install-NvidiaDrivers {
-        Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
-        New-Item -ItemType Directory -Path "Nvidia-Drivers" | Out-Null
-        $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
-        $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Nvidia-GPU-Drivers/refs/heads/main/configs/link.txt").Trim()
-        Invoke-WebRequest -Uri $downloadLink -OutFile $nvidiaDrivers
-        if (Test-Path -Path "$nvidiaDrivers") {
-            Start-Process $nvidiaDrivers -Wait
-        } else {
-            Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
-        }
+        # Write-Host "Nvidia GPU detected. Drivers downloading and installing..."
+        # New-Item -ItemType Directory -Path "Nvidia-Drivers" | Out-Null
+        # $nvidiaDrivers = "Nvidia-Drivers\setup.exe"
+        # $downloadLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/PowerPCFan/Nvidia-GPU-Drivers/refs/heads/main/configs/link.txt").Trim()
+        # Invoke-WebRequest -Uri $downloadLink -OutFile $nvidiaDrivers
+        # if (Test-Path -Path "$nvidiaDrivers") {
+        #     Start-Process $nvidiaDrivers -Wait
+        # } else {
+        #     Write-Host -ForegroundColor Red "Error: Nvidia driver installer not found at $nvidiaDrivers."
+        # }
+        Write-Host "I am currently working on a better solution for Nvidia drivers, but it is not production ready yet.`nPlease download the latest drivers from the Nvidia website." -ForegroundColor DarkCyan
     }
 
     function Install-AMDDrivers {
@@ -778,10 +779,10 @@ function Show-ScriptOptionsWindow {
     Add-Type -AssemblyName PresentationFramework
     Add-Type -AssemblyName System.Windows.Forms
 
-    [xml] $xaml = @"
+    [xml]$xaml = @"
     <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Script Options" Height="$height" Width="$width" FontFamily="$font">
+        Title="Script Options" Height="$height" Width="$width" WindowStartupLocation="CenterScreen" FontFamily="$font">
         <Window.Resources>
             <Style TargetType="{x:Type Control}">
                 <Setter Property="FontFamily" Value="$font" />
@@ -1301,18 +1302,18 @@ $ProgressPreference = 'SilentlyContinue' # for commands like invoke-webrequest/i
 Set-ScriptVariables
 
 # Start Transcript
-Start-Logging
+##### Start-Logging
 
-Write-Host "Checking for administrator privileges..."
-Test-AdminPrivileges
-Write-Host "Checking internet connectivity..."
-Test-Internet
+##### Write-Host "Checking for administrator privileges..."
+##### Test-AdminPrivileges
+##### Write-Host "Checking internet connectivity..."
+##### Test-Internet
 # unless I overlooked something, this will only print when the checks are successful since both functions interrupt the script if they fail
-Write-Host -ForegroundColor Green "Success"
+##### Write-Host -ForegroundColor Green "Success"
 
 # Install prerequisites and import modules
-Write-Host "Installing prerequisites..."
-Install-Prerequisites
+##### Write-Host "Installing prerequisites..."
+##### Install-Prerequisites
 Import-Module -Name "AnyBox"
 Import-Module -Name "Microsoft.WinGet.Client"
 
@@ -1321,5 +1322,5 @@ $selectedTasks = Show-ScriptOptionsWindow
 Invoke-SelectedScriptTasks -Tasks $selectedTasks
 
 # Show completion dialog and stop transcript
-Show-ScriptCompleteBox
-Stop-Transcript
+##### Show-ScriptCompleteBox
+##### Stop-Transcrip t

@@ -1323,4 +1323,4 @@ Invoke-SelectedScriptTasks -Tasks $selectedTasks
 
 # Show completion dialog and stop transcript
 Show-ScriptCompleteBox
-Stop-Transcrip t
+Stop-Transcript

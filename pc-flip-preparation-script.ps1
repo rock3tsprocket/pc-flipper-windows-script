@@ -1302,18 +1302,18 @@ $ProgressPreference = 'SilentlyContinue' # for commands like invoke-webrequest/i
 Set-ScriptVariables
 
 # Start Transcript
-##### Start-Logging
+Start-Logging
 
-##### Write-Host "Checking for administrator privileges..."
-##### Test-AdminPrivileges
-##### Write-Host "Checking internet connectivity..."
-##### Test-Internet
+Write-Host "Checking for administrator privileges..."
+Test-AdminPrivileges
+Write-Host "Checking internet connectivity..."
+Test-Internet
 # unless I overlooked something, this will only print when the checks are successful since both functions interrupt the script if they fail
-##### Write-Host -ForegroundColor Green "Success"
+Write-Host -ForegroundColor Green "Success"
 
 # Install prerequisites and import modules
-##### Write-Host "Installing prerequisites..."
-##### Install-Prerequisites
+Write-Host "Installing prerequisites..."
+Install-Prerequisites
 Import-Module -Name "AnyBox"
 Import-Module -Name "Microsoft.WinGet.Client"
 
@@ -1322,5 +1322,5 @@ $selectedTasks = Show-ScriptOptionsWindow
 Invoke-SelectedScriptTasks -Tasks $selectedTasks
 
 # Show completion dialog and stop transcript
-##### Show-ScriptCompleteBox
-##### Stop-Transcrip t
+Show-ScriptCompleteBox
+Stop-Transcrip t

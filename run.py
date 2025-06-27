@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 import requests
 
 mainFolderPath = os.getenv("TEMP")+"\\pc-flipper-script"

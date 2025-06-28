@@ -9,6 +9,7 @@ from datetime import datetime
 RED = "\033[0;31m"
 RESET = "\033[0m"
 CYAN = "\033[0;36m"
+GREEN = "\033[0;32m"
 
 def init():
 	if sys.platform == "win32":
@@ -149,6 +150,7 @@ def Install_GPUDrivers(): # Approved Verb ("Places a resource in a location, and
 		else:
 			print(f"{RED}Error: AMD driver installer not found at {amdDrivers}.{RESET}")
 			exit(1)
+
 	def Install_IntelDrivers():
 		print("Intel Arc GPU detected. Drivers downloading and installing...")
 		os.mkdir("Intel-Arc-Drivers")
@@ -187,18 +189,57 @@ def Install_GPUDrivers(): # Approved Verb ("Places a resource in a location, and
 	elif response == 'Intel':
 	    Install_IntelDrivers()
 	elif response == 'Other':
-	    print("You selected Other, which means your GPU is currently unsupported. Please download drivers manually.")
-	    exit(1)
+		print("You selected Other, which means your GPU is currently unsupported. Please download drivers manually.")
+		exit(1)
+
+
+def Install_ChipsetDrivers(): # Approved Verb ("Places a resource in a location, and optionally initializes it")
+	os.mkdir("chipset")
+		if cpuinfo.get_cpu_info()["vendor_id_raw"] == "AuthenticAMD":
+		chipsetDriverPath = "chipset\\ChipsetDrivers_AMD.exe"
+		chipsetDriverLink = (Invoke-RestMethod -Uri "https://raw.githubusercontent.com/notFoxils/AMD-Chipset-Drivers/refs/heads/main/configs/link.txt").rstrip()
+		driver = requests.get(chipsetDriverLink, headers={'referer': "https://www.amd.com/en/support/download/drivers.html"})
+		open(chipsetDriverPath, wb).write(driver.content)
+		if os.is_file(chipsetDriverPath):
+			print(f"{GREEN}AMD chipset drivers successfully downloaded.{RESET}"
+			print("Installing drivers..."
+			os.system(chipsetDriverPath)
+		else:
+			input(f"{RED}Error{RESET}: AMD driver installer not found at {chipsetDriverPath}.")
+			exit(1)
+
+	elif cpuinfo.get_cpu_info()["vendor_id_raw"] == "GenuineIntel":
+		chipsetDriverPath = "chipset\\ChipsetDrivers_Intel.exe"
+		driver = requests.get("https://downloadmirror.intel.com/843223/SetupChipset.exe")
+		open(chipsetDriverPath, wb).write(driver.content)
+		if os.is_file(chipsetDriverPath):
+			print(f"{GREEN}Intel chipset drivers successfully downloaded.{RESET}"
+			print("Installing drivers..."}
+			os.system(chipsetDriverPath)
+			print(f"{GREEN}Chipset drivers have finished installing.{RESET}")
+		else:
+			print(f"{RED}Error{RESET}: Intel driver installer not found at {chipsetDriverPath}"
+
+	else:
+		print("Whatever your CPU is is unsupported. Download the chipset drivers manually.")
+
+def ShowhMotherboardDriverPage { # Approved Verb ("Makes a resource visible to the user")
+    searchUrl = "https://duckduckgo.com/?q=motherboard+drivers+for+$($fullMotherboardName -replace ' ', '+')"
+    os.system(searchUrl)
+}
 
 while True:
-	question = input("What would you like to do?\n(Options: Run Furmark tests (not working right now), triggered by responding with 'furmark'; install GPU drivers, which can be triggered with 'GPU'; or 'exit' to exit. (case-sensitive)\n")
+	question = input("What would you like to do?\n(Options: Install GPU drivers, (triggered by 'GPU'), install chipset drivers (triggered by 'chipset'), show motherboard page (triggered by 'motherboard') or 'exit' to exit. (case-sensitive)\n")
 	if question == "GPU":
 		Install_GPUDrivers()
 	elif question == "furmark":
 		print("Furmark tests are currently incomplete and do not work.")
+	elif question == "all":
+		Install_GPUDrivers()
+		Install_ChipsetDrivers()
 	elif question == "exit":
 		print("Quitting...")
-		exit(1)
+		exit(0)
 	else:
 		print("Invalid input! Reasking question.\n")
 
